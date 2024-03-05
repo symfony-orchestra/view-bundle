@@ -1,0 +1,43 @@
+{
+  "name": "wtorsi/view-bundle",
+  "type": "library",
+  "description": "View symfony bundle for API responses",
+  "keywords": [
+    "symfony",
+    "view-bundle",
+    "view"
+  ],
+  "license": "MIT",
+  "authors": [
+    {
+      "name": "Andrew Lukin",
+      "email": "lukin.andrej@gmail.com",
+      "homepage": "https://github.com/wtorsi",
+      "role": "Developer"
+    }
+  ],
+  "require": {
+    "php": "^8.3",
+    "symfony/http-kernel": "7.0.*",
+    "symfony/serializer": "7.0.*",
+    "symfony/property-access": "7.0.*",
+    "symfony/dependency-injection": "7.0.*",
+    "symfony/config": "7.0.*",
+    "doctrine/common": "^3.0.3"
+  },
+  "autoload": {
+    "psr-4": {
+      "Dev\\ViewBundle\\": ""
+    }
+  },
+  "minimum-stability": "stable",
+  "conflict": {
+    "symfony/symfony": "*"
+  },
+  "extra": {
+    "symfony": {
+      "allow-contrib": false,
+      "require": "7.0.*"
+    }
+  }
+}

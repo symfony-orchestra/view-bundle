@@ -1,0 +1,15 @@
+services:
+    _defaults:
+        autowire: true
+        autoconfigure: true
+        public: false
+
+    Symfony\Component\Serializer\Normalizer\CustomNormalizer: ~
+    
+    Dev\ViewBundle\:
+        resource: '../../*'
+        exclude: '../../{Exception,View,PropertyAccessor}'
+
+    Dev\ViewBundle\Serializer\Normalizer\ViewNormalizer:
+        class: Dev\ViewBundle\Serializer\Normalizer\ViewNormalizer
+        factory: [ '@Dev\ViewBundle\Serializer\Normalizer\ViewNormalizerFactory', 'create']
