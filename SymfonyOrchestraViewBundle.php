@@ -9,8 +9,11 @@ declare(strict_types=1);
  * file that was distributed with this source code.
  */
 
-namespace SymfonyOrchestra\ViewBundle\View;
+namespace SymfonyOrchestra\ViewBundle;
 
-abstract class View implements ViewInterface
+use Symfony\Component\DependencyInjection\ContainerBuilder;
+use Symfony\Component\HttpKernel\Bundle\Bundle;
+
+class SymfonyOrchestraViewBundle extends Bundle
 {
 }

@@ -2,16 +2,23 @@
 
 declare(strict_types=1);
 
-namespace Dev\ViewBundle\DependencyInjection;
+/*
+ * This file is part of the SymfonyOrchestra package.
+ *
+ * For the full copyright and license information, please view the LICENSE
+ * file that was distributed with this source code.
+ */
 
-use Dev\ViewBundle\EventSubscriber\SetVersionSubscriber;
+namespace SymfonyOrchestra\ViewBundle\DependencyInjection;
+
 use Symfony\Component\Config\FileLocator;
 use Symfony\Component\DependencyInjection\ContainerBuilder;
 use Symfony\Component\DependencyInjection\Extension\Extension;
 use Symfony\Component\DependencyInjection\Loader\YamlFileLoader;
 use Symfony\Component\DependencyInjection\Parameter;
+use SymfonyOrchestra\ViewBundle\EventSubscriber\SetVersionSubscriber;
 
-class DevViewExtension extends Extension
+class SymfonyOrchestraViewExtension extends Extension
 {
     public function load(array $configs, ContainerBuilder $container): void
     {
@@ -21,6 +28,6 @@ class DevViewExtension extends Extension
 
     private function registerViewCache(ContainerBuilder $container): void
     {
-        $container->getDefinition(SetVersionSubscriber::class)->setArgument('$buildId', $param = new Parameter('container.build_id'));
+        $container->getDefinition(SetVersionSubscriber::class)->setArgument('$buildId', new Parameter('container.build_id'));
     }
 }

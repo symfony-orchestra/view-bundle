@@ -2,7 +2,14 @@
 
 declare(strict_types=1);
 
-namespace Dev\ViewBundle\PropertyAccessor;
+/*
+ * This file is part of the SymfonyOrchestra package.
+ *
+ * For the full copyright and license information, please view the LICENSE
+ * file that was distributed with this source code.
+ */
+
+namespace SymfonyOrchestra\ViewBundle\PropertyAccessor;
 
 use Doctrine\Persistence\Proxy;
 use Symfony\Component\PropertyAccess\Exception\NoSuchPropertyException;
@@ -13,7 +20,7 @@ readonly class ReflectionPropertyAccessor implements PropertyAccessorInterface
 {
     public function __construct(
         private PropertyAccessorInterface $decorated,
-        private ReflectionService $reflectionService
+        private ReflectionService $reflectionService,
     )
     {
     }

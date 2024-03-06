@@ -6,10 +6,10 @@ services:
 
     Symfony\Component\Serializer\Normalizer\CustomNormalizer: ~
     
-    Dev\ViewBundle\:
+    SymfonyOrchestra\ViewBundle\:
         resource: '../../*'
         exclude: '../../{Exception,View,PropertyAccessor}'
 
-    Dev\ViewBundle\Serializer\Normalizer\ViewNormalizer:
-        class: Dev\ViewBundle\Serializer\Normalizer\ViewNormalizer
-        factory: [ '@Dev\ViewBundle\Serializer\Normalizer\ViewNormalizerFactory', 'create']
+    SymfonyOrchestra\ViewBundle\Serializer\Normalizer\ViewNormalizer:
+        class: SymfonyOrchestra\ViewBundle\Serializer\Normalizer\ViewNormalizer
+        factory: [ '@SymfonyOrchestra\ViewBundle\Serializer\Normalizer\ViewNormalizerFactory', 'create']

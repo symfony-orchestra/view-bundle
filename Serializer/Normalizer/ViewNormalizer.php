@@ -2,9 +2,16 @@
 
 declare(strict_types=1);
 
-namespace Dev\ViewBundle\Serializer\Normalizer;
+/*
+ * This file is part of the SymfonyOrchestra package.
+ *
+ * For the full copyright and license information, please view the LICENSE
+ * file that was distributed with this source code.
+ */
 
-use Dev\ViewBundle\View\ViewInterface;
+namespace SymfonyOrchestra\ViewBundle\Serializer\Normalizer;
+
+use SymfonyOrchestra\ViewBundle\View\ViewInterface;
 use Symfony\Component\Serializer\Normalizer\NormalizerAwareInterface;
 use Symfony\Component\Serializer\Normalizer\NormalizerAwareTrait;
 use Symfony\Component\Serializer\Normalizer\NormalizerInterface;

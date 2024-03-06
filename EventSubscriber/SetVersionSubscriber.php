@@ -2,9 +2,16 @@
 
 declare(strict_types=1);
 
-namespace Dev\ViewBundle\EventSubscriber;
+/*
+ * This file is part of the SymfonyOrchestra package.
+ *
+ * For the full copyright and license information, please view the LICENSE
+ * file that was distributed with this source code.
+ */
 
-use Dev\ViewBundle\Utils\BindUtils;
+namespace SymfonyOrchestra\ViewBundle\EventSubscriber;
+
+use SymfonyOrchestra\ViewBundle\Utils\BindUtils;
 use Symfony\Component\DependencyInjection\Attribute\Autowire;
 use Symfony\Component\EventDispatcher\Attribute\AsEventListener;
 use Symfony\Component\HttpKernel\Event\RequestEvent;

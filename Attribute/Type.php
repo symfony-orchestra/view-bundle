@@ -9,8 +9,13 @@ declare(strict_types=1);
  * file that was distributed with this source code.
  */
 
-namespace SymfonyOrchestra\ViewBundle\View;
+namespace SymfonyOrchestra\ViewBundle\Attribute;
 
-abstract class View implements ViewInterface
+#[\Attribute(\Attribute::TARGET_PROPERTY)]
+final readonly class Type
 {
+    public function __construct(public string $class)
+    {
+    }
 }
+

@@ -2,11 +2,18 @@
 
 declare(strict_types=1);
 
-namespace Dev\ViewBundle\EventSubscriber;
+/*
+ * This file is part of the SymfonyOrchestra package.
+ *
+ * For the full copyright and license information, please view the LICENSE
+ * file that was distributed with this source code.
+ */
 
-use Dev\ViewBundle\View\DataView;
-use Dev\ViewBundle\View\ResponseView;
-use Dev\ViewBundle\View\ViewInterface;
+namespace SymfonyOrchestra\ViewBundle\EventSubscriber;
+
+use SymfonyOrchestra\ViewBundle\View\DataView;
+use SymfonyOrchestra\ViewBundle\View\ResponseView;
+use SymfonyOrchestra\ViewBundle\View\ViewInterface;
 use Symfony\Component\EventDispatcher\Attribute\AsEventListener;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpKernel\Event\ViewEvent;

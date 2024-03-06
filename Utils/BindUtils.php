@@ -2,14 +2,21 @@
 
 declare(strict_types=1);
 
-namespace Dev\ViewBundle\Utils;
+/*
+ * This file is part of the SymfonyOrchestra package.
+ *
+ * For the full copyright and license information, please view the LICENSE
+ * file that was distributed with this source code.
+ */
 
-use Dev\ViewBundle\Annotation\Type;
-use Dev\ViewBundle\PropertyAccessor\ReflectionPropertyAccessor;
-use Dev\ViewBundle\PropertyAccessor\ReflectionService;
-use Dev\ViewBundle\View\BindView;
-use Dev\ViewBundle\View\IterableView;
-use Dev\ViewBundle\View\ViewInterface;
+namespace SymfonyOrchestra\ViewBundle\Utils;
+
+use SymfonyOrchestra\ViewBundle\Attribute\Type;
+use SymfonyOrchestra\ViewBundle\PropertyAccessor\ReflectionPropertyAccessor;
+use SymfonyOrchestra\ViewBundle\PropertyAccessor\ReflectionService;
+use SymfonyOrchestra\ViewBundle\View\BindView;
+use SymfonyOrchestra\ViewBundle\View\IterableView;
+use SymfonyOrchestra\ViewBundle\View\ViewInterface;
 use Doctrine\Common\Util\ClassUtils;
 use Symfony\Component\PropertyAccess\PropertyAccessor;
 use Symfony\Component\PropertyInfo\Extractor\ReflectionExtractor;

@@ -1,11 +1,14 @@
 {
-  "name": "wtorsi/view-bundle",
+  "name": "symfony-orchestra/view-bundle",
   "type": "library",
-  "description": "View symfony bundle for API responses",
+  "description": "The view symfony bundle for JSON API responses",
   "keywords": [
     "symfony",
     "view-bundle",
-    "view"
+    "view",
+    "api",
+    "json",
+    "typescript"
   ],
   "license": "MIT",
   "authors": [
@@ -23,11 +26,11 @@
     "symfony/property-access": "7.0.*",
     "symfony/dependency-injection": "7.0.*",
     "symfony/config": "7.0.*",
-    "doctrine/common": "^3.0.3"
+    "doctrine/common": "^3.4.3"
   },
   "autoload": {
     "psr-4": {
-      "Dev\\ViewBundle\\": ""
+      "SymfonyOrchestra\\ViewBundle\\": ""
     }
   },
   "minimum-stability": "stable",
