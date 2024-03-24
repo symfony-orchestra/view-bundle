@@ -11,13 +11,13 @@ declare(strict_types=1);
 
 namespace SymfonyOrchestra\ViewBundle\EventSubscriber;
 
-use SymfonyOrchestra\ViewBundle\View\DataView;
-use SymfonyOrchestra\ViewBundle\View\ResponseView;
-use SymfonyOrchestra\ViewBundle\View\ViewInterface;
 use Symfony\Component\EventDispatcher\Attribute\AsEventListener;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpKernel\Event\ViewEvent;
 use Symfony\Component\Serializer\SerializerInterface;
+use SymfonyOrchestra\ViewBundle\View\DataView;
+use SymfonyOrchestra\ViewBundle\View\ResponseView;
+use SymfonyOrchestra\ViewBundle\View\ViewInterface;
 
 #[AsEventListener(ViewEvent::class)]
 readonly class ViewSubscriber

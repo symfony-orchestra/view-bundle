@@ -11,10 +11,10 @@ declare(strict_types=1);
 
 namespace SymfonyOrchestra\ViewBundle\EventSubscriber;
 
-use SymfonyOrchestra\ViewBundle\Utils\BindUtils;
 use Symfony\Component\DependencyInjection\Attribute\Autowire;
 use Symfony\Component\EventDispatcher\Attribute\AsEventListener;
 use Symfony\Component\HttpKernel\Event\RequestEvent;
+use SymfonyOrchestra\ViewBundle\Utils\BindUtils;
 
 #[AsEventListener(RequestEvent::class, priority: 256)]
 readonly class SetVersionSubscriber

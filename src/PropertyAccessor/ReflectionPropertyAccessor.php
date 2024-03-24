@@ -25,7 +25,7 @@ readonly class ReflectionPropertyAccessor implements PropertyAccessorInterface
     {
     }
 
-    public function setValue(object|iterable &$objectOrArray, string|PropertyPathInterface $propertyPath, mixed $value): void
+    public function setValue(object|array &$objectOrArray, string|PropertyPathInterface $propertyPath, mixed $value): void
     {
         if ($objectOrArray instanceof Proxy && !$objectOrArray->__isInitialized()) {
             $objectOrArray->__load();
@@ -38,7 +38,7 @@ readonly class ReflectionPropertyAccessor implements PropertyAccessorInterface
     /**
      * @throws \ReflectionException
      */
-    public function getValue(object|iterable $objectOrArray, string|PropertyPathInterface $propertyPath): mixed
+    public function getValue(object|array $objectOrArray, string|PropertyPathInterface $propertyPath): mixed
     {
         if ($objectOrArray instanceof Proxy && !$objectOrArray->__isInitialized()) {
             $objectOrArray->__load();
@@ -49,7 +49,7 @@ readonly class ReflectionPropertyAccessor implements PropertyAccessorInterface
         } catch (NoSuchPropertyException|\Error $e) {
             if (
                 !$e instanceof NoSuchPropertyException
-                && !\preg_match('/^Cannot access (private|protected) property '.\preg_quote(\get_debug_type($objectOrArray), '/').'::\$'.$propertyPath.'$/', $e->getMessage(), $matches)) {
+                || !\preg_match('/^Cannot access (private|protected) property ' . \preg_quote(\get_debug_type($objectOrArray), '/') . '::\$' . $propertyPath . '$/', $e->getMessage())) {
                 throw $e;
             }
 
@@ -77,6 +77,9 @@ readonly class ReflectionPropertyAccessor implements PropertyAccessorInterface
         return $this->decorated->isReadable($objectOrArray, $propertyPath) || $this->propertyExists($objectOrArray, $propertyPath);
     }
 
+    /**
+     * Is the property accessible as public of getter method
+     */
     public function isStrictlyReadable(object|iterable $objectOrArray, string|PropertyPathInterface $propertyPath): bool
     {
         return $this->decorated->isReadable($objectOrArray, $propertyPath);
@@ -87,7 +90,7 @@ readonly class ReflectionPropertyAccessor implements PropertyAccessorInterface
      */
     private function propertyExists(object|iterable $objectOrArray, string|PropertyPathInterface $propertyPath): bool
     {
-        return null !== $this->getReflectionProperty($objectOrArray, (string) $propertyPath);
+        return null !== $this->getReflectionProperty($objectOrArray, (string)$propertyPath);
     }
 
     /**

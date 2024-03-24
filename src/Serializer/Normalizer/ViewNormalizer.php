@@ -11,10 +11,10 @@ declare(strict_types=1);
 
 namespace SymfonyOrchestra\ViewBundle\Serializer\Normalizer;
 
-use SymfonyOrchestra\ViewBundle\View\ViewInterface;
 use Symfony\Component\Serializer\Normalizer\NormalizerAwareInterface;
 use Symfony\Component\Serializer\Normalizer\NormalizerAwareTrait;
 use Symfony\Component\Serializer\Normalizer\NormalizerInterface;
+use SymfonyOrchestra\ViewBundle\View\ViewInterface;
 
 class ViewNormalizer implements NormalizerInterface, NormalizerAwareInterface
 {
