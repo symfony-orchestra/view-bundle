@@ -62,7 +62,7 @@ The possible views for our scenario could be:
 <?php
 declare(strict_types=1);
 
-use SymfonyOrchestra\ViewBundle\src\Attribute\Type;
+use SymfonyOrchestra\ViewBundle\Attribute\Type;
 
 class UserView extends BindView
 {
@@ -197,7 +197,7 @@ class User {
     private iterable $collection
 }
 
-class UserView extends \SymfonyOrchestra\ViewBundle\src\View\BindView {
+class UserView extends \SymfonyOrchestra\ViewBundle\View\BindView {
     /** will take all the properties from the User class */
     private int $int;
     private string $string;
@@ -217,7 +217,7 @@ class GetOptions  extends GetAction
     {
         $option1 = new Option();
         $option2 = new Option();
-        return new \SymfonyOrchestra\ViewBundle\src\View\IterableView(
+        return new \SymfonyOrchestra\ViewBundle\View\IterableView(
             [$option1, $option2],
             OptionView::class,
         );
