@@ -11,15 +11,15 @@ declare(strict_types=1);
 
 namespace SymfonyOrchestra\ViewBundle\Utils;
 
+use Doctrine\Common\Util\ClassUtils;
+use Symfony\Component\PropertyAccess\PropertyAccessor;
+use Symfony\Component\PropertyInfo\Extractor\ReflectionExtractor;
 use SymfonyOrchestra\ViewBundle\Attribute\Type;
 use SymfonyOrchestra\ViewBundle\PropertyAccessor\ReflectionPropertyAccessor;
 use SymfonyOrchestra\ViewBundle\PropertyAccessor\ReflectionService;
 use SymfonyOrchestra\ViewBundle\View\BindView;
 use SymfonyOrchestra\ViewBundle\View\IterableView;
 use SymfonyOrchestra\ViewBundle\View\ViewInterface;
-use Doctrine\Common\Util\ClassUtils;
-use Symfony\Component\PropertyAccess\PropertyAccessor;
-use Symfony\Component\PropertyInfo\Extractor\ReflectionExtractor;
 
 class BindUtils
 {

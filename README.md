@@ -6,6 +6,23 @@ The goal of the bundle is to separate the response views from the app's business
 
 As a result, you will have a set of simple `View` classes with an internal hierarchy that is easily understandable by everybody in a team.
 
+# Requirements
+
+- PHP 8.3 
+- Symfony 7.0.*
+- Doctrine common ^3.4
+
+```json
+{
+  "php": "^8.3",
+  "symfony/http-kernel": "7.0.*",
+  "symfony/serializer": "7.0.*",
+  "symfony/property-access": "7.0.*",
+  "symfony/dependency-injection": "7.0.*",
+  "symfony/config": "7.0.*",
+  "doctrine/common": "^3.4.3"
+}
+```
 
 # Example
 
@@ -45,7 +62,7 @@ The possible views for our scenario could be:
 <?php
 declare(strict_types=1);
 
-use \SymfonyOrchestra\ViewBundle\Attribute\Type;
+use SymfonyOrchestra\ViewBundle\src\Attribute\Type;
 
 class UserView extends BindView
 {
@@ -72,8 +89,6 @@ class UserView extends BindView
 ```php
 <?php
 declare(strict_types=1);
-
-use \SymfonyOrchestra\ViewBundle\Attribute\Type;
 
 class ImageView extends BindView
 {
@@ -182,7 +197,7 @@ class User {
     private iterable $collection
 }
 
-class UserView extends \SymfonyOrchestra\ViewBundle\View\BindView {
+class UserView extends \SymfonyOrchestra\ViewBundle\src\View\BindView {
     /** will take all the properties from the User class */
     private int $int;
     private string $string;
@@ -192,7 +207,7 @@ class UserView extends \SymfonyOrchestra\ViewBundle\View\BindView {
 
 ### \SymfonyOrchestra\ViewBundle\View\IterableView
 
-The view for the iterable objects. 
+The view for the iterable objects.
 
 ```php
 
@@ -202,7 +217,7 @@ class GetOptions  extends GetAction
     {
         $option1 = new Option();
         $option2 = new Option();
-        return new \SymfonyOrchestra\ViewBundle\View\IterableView(
+        return new \SymfonyOrchestra\ViewBundle\src\View\IterableView(
             [$option1, $option2],
             OptionView::class,
         );
