@@ -230,3 +230,5 @@ class GetOptions  extends GetAction
 It can be used together with the `\SymfonyOrchestra\ViewBundle\Attribute\Type` and `\SymfonyOrchestra\ViewBundle\View\BindView`
 attribute to simplify the workflow. In this case the underlined iterable objects will be automatically constructed based on the configured
 type. 
+
+**Enjoy the orchestra! 🎻**
