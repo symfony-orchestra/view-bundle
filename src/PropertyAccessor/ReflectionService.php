@@ -18,6 +18,7 @@ class ReflectionService
     private static array $storage = [];
 
     /**
+     * @return array<string, \ReflectionProperty>
      * @throws \ReflectionException
      */
     public function getReflectionProperties(\ReflectionClass|string $class): array
@@ -27,15 +28,11 @@ class ReflectionService
             return static::$storage[$className];
         }
 
-        $cache = [];
         $class = $class instanceof \ReflectionClass ? $class : new \ReflectionClass($class);
-        foreach ($class->getProperties() as $p) {
-            $cache[$p->getName()] = $p;
-        }
-
-        if (($parent = $class->getParentClass()) instanceof \ReflectionClass) {
-            $cache = \array_merge($cache, $this->getReflectionProperties($parent));
-        }
+        $cache = [];
+        do {
+            $cache = \array_merge($cache, $this->getClassProperties($class));
+        } while (($class = $class->getParentClass()) instanceof \ReflectionClass);
 
         return static::$storage[$className] = $cache;
     }
@@ -46,5 +43,18 @@ class ReflectionService
     public function getReflectionProperty(string|object $class, string $propertyPath): \ReflectionProperty|null
     {
         return $this->getReflectionProperties(\is_object($class) ? ClassUtils::getClass($class) : $class)[$propertyPath] ?? null;
+    }
+
+    /**
+     * @return array<string, \ReflectionProperty>
+     */
+    private function getClassProperties(\ReflectionClass $class): array
+    {
+        $properties = [];
+        foreach ($class->getProperties() as $p) {
+            $properties[$p->getName()] = $p;
+        }
+
+        return $properties;
     }
 }
