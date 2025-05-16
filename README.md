@@ -8,19 +8,19 @@ As a result, you will have a set of simple `View` classes with an internal hiera
 
 # Requirements
 
-- PHP 8.3 
-- Symfony 7.0.*
-- Doctrine common ^3.4
+- PHP 8.4
+- Symfony 7.2.*
+- Doctrine common ^3.5
 
 ```json
 {
   "php": "^8.3",
-  "symfony/http-kernel": "7.0.*",
-  "symfony/serializer": "7.0.*",
-  "symfony/property-access": "7.0.*",
-  "symfony/dependency-injection": "7.0.*",
-  "symfony/config": "7.0.*",
-  "doctrine/common": "^3.4.3"
+  "symfony/http-kernel": "7.2.*",
+  "symfony/serializer": "7.2.*",
+  "symfony/property-access": "7.2.*",
+  "symfony/dependency-injection": "7.2.*",
+  "symfony/config": "7.2.*",
+  "doctrine/common": "^3.5"
 }
 ```
 
@@ -147,7 +147,7 @@ As you can see, the last name is omitted because `null` values were removed from
 # Installation
 
 ```
-composer install symfony-orchestra/view-bundle:7.0.*
+composer install symfony-orchestra/view-bundle:7.2.*
 ```
 
 Add the bundle to `config/bundles.php`
