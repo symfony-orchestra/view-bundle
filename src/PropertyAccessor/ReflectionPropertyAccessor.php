@@ -21,8 +21,7 @@ readonly class ReflectionPropertyAccessor implements PropertyAccessorInterface
     public function __construct(
         private PropertyAccessorInterface $decorated,
         private ReflectionService $reflectionService,
-    )
-    {
+    ) {
     }
 
     public function setValue(object|array &$objectOrArray, string|PropertyPathInterface $propertyPath, mixed $value): void
@@ -46,17 +45,13 @@ readonly class ReflectionPropertyAccessor implements PropertyAccessorInterface
 
         try {
             return $this->decorated->getValue($objectOrArray, $propertyPath);
-        } catch (NoSuchPropertyException|\Error $e) {
-            if (
-                !$e instanceof NoSuchPropertyException
-                || !\preg_match('/^Cannot access (private|protected) property ' . \preg_quote(\get_debug_type($objectOrArray), '/') . '::\$' . $propertyPath . '$/', $e->getMessage())) {
+        } catch (\Throwable $e) {
+            if (!$this->isIntercepted($e, $objectOrArray, $propertyPath)) {
                 throw $e;
             }
-
             if (null === $property = $this->getReflectionProperty($objectOrArray, $propertyPath)) {
                 throw $e;
             }
-
             return $property->getValue($objectOrArray);
         }
     }
@@ -103,5 +98,18 @@ readonly class ReflectionPropertyAccessor implements PropertyAccessorInterface
         }
 
         return $this->reflectionService->getReflectionProperty($objectOrArray, $propertyPath);
+    }
+
+    private function isIntercepted(\Throwable $e, object|array $objectOrArray, string|PropertyPathInterface $propertyPath): bool
+    {
+        if ($e instanceof NoSuchPropertyException) {
+            return true;
+        }
+        $supported = [
+            '/^Cannot access (private|protected) property '.\preg_quote(\get_debug_type($objectOrArray), '/').'::\$'.$propertyPath.'$/',
+            '/^Can\'t get a way to read the property "'.$propertyPath.'" in class '.\preg_quote(\get_debug_type($objectOrArray), '/').'$/',
+        ];
+
+        return \array_any($supported, fn($pattern) => \preg_match($pattern, $e->getMessage()));
     }
 }
