@@ -44,6 +44,14 @@ final class IterableViewTest extends TestCase
         new IterableView([new \stdClass()], 'MissingViewClass');
     }
 
+    public function testItThrowsWhenClassStringDoesNotImplementViewInterface(): void
+    {
+        $this->expectException(\RuntimeException::class);
+        $this->expectExceptionMessage('must implement ViewInterface');
+
+        new IterableView([new \stdClass()], \stdClass::class);
+    }
+
     public function testNormalizeDelegatesEntries(): void
     {
         $view = new IterableView([1, 2], static fn(int $v) => $v + 1);

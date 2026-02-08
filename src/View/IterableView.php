@@ -20,7 +20,11 @@ class IterableView extends View implements NormalizableInterface
     {
         if (\is_string($map)) {
             if (!\class_exists($map)) {
-                throw new \RuntimeException(\sprintf('Mapping class %s does not exists', $map));
+                throw new \RuntimeException(\sprintf('Mapping class %s does not exist', $map));
+            }
+
+            if (!\is_a($map, ViewInterface::class, true)) {
+                throw new \RuntimeException(\sprintf('Mapping class %s must implement ViewInterface', $map));
             }
 
             $map = static fn(object $v) => new $map($v);

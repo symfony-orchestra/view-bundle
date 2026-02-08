@@ -44,7 +44,7 @@ readonly class ReflectionPropertyAccessor implements PropertyAccessorInterface
 
         try {
             return $this->decorated->getValue($objectOrArray, $propertyPath);
-        } catch (\Throwable $e) {
+        } catch (\Exception $e) {
             if (!$this->isIntercepted($e, $objectOrArray, $propertyPath)) {
                 throw $e;
             }

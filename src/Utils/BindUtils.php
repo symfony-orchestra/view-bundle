@@ -27,6 +27,7 @@ class BindUtils
     private static string $cacheNamespace = 'bind_view';
     private static int $cacheLifetime = 0;
     private static string $version = '';
+    private const MAX_CACHE_SIZE = 1024;
     private static array $storage = [];
     private ReflectionService $reflectionService;
 
@@ -35,6 +36,16 @@ class BindUtils
         $this->reflectionService = new ReflectionService();
     }
 
+    /**
+     * Configures caching parameters. Called once at bootstrap via SetVersionSubscriber.
+     * Subsequent calls are ignored to ensure configuration consistency.
+     *
+     * @param string $buildId Unique build identifier for cache versioning (e.g., container.build_id)
+     * @param int $cacheLifetime Cache lifetime in seconds (0 = disabled, used in debug mode)
+     * @param string $namespace Cache namespace prefix to prevent collisions
+     *
+     * @throws \InvalidArgumentException If cacheLifetime is negative or namespace is empty
+     */
     public static function configure(string $buildId, int $cacheLifetime = 3600, string $namespace = 'bind_view'): void
     {
         if (static::$configured) {
@@ -100,7 +111,11 @@ class BindUtils
 
         if ($this->isView($type)) {
             if (!$type instanceof \ReflectionNamedType) {
-                throw new \LogicException('Expected ReflectionNamedType for view instantiation');
+                throw new \LogicException(\sprintf(
+                    'Property %s::$%s has view type but is not a named type. Union/intersection types with ViewInterface are not supported.',
+                    $targetProperty->getDeclaringClass()->getName(),
+                    $targetProperty->getName()
+                ));
             }
 
             if ($this->isTypedIterableView($targetProperty)) {
@@ -168,6 +183,10 @@ class BindUtils
             }
 
             $intersection[$propertyName] = [$targetProperty, $sourceProperty];
+        }
+
+        if (\count(self::$storage) >= self::MAX_CACHE_SIZE) {
+            unset(self::$storage[\array_key_first(self::$storage)]);
         }
 
         return self::$storage[$cacheKey] = $intersection;

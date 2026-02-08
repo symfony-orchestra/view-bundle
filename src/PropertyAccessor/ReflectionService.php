@@ -15,6 +15,7 @@ use Doctrine\Common\Util\ClassUtils;
 
 class ReflectionService
 {
+    private const MAX_CACHE_SIZE = 512;
     private static array $storage = [];
 
     /**
@@ -35,6 +36,10 @@ class ReflectionService
 
         if (($parent = $class->getParentClass()) instanceof \ReflectionClass) {
             $cache = \array_merge($cache, $this->getReflectionProperties($parent));
+        }
+
+        if (\count(static::$storage) >= self::MAX_CACHE_SIZE) {
+            unset(static::$storage[\array_key_first(static::$storage)]);
         }
 
         return static::$storage[$className] = $cache;
