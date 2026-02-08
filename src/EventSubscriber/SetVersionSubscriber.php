@@ -19,6 +19,8 @@ use ChamberOrchestra\ViewBundle\Utils\BindUtils;
 #[AsEventListener(RequestEvent::class, priority: 256)]
 readonly class SetVersionSubscriber
 {
+    private const CACHE_LIFETIME_SECONDS = 86400; // 24 hours
+
     public function __construct(
         private string $buildId = '',
         #[Autowire('%env(bool:APP_DEBUG)%')]
@@ -29,6 +31,6 @@ readonly class SetVersionSubscriber
 
     public function __invoke(): void
     {
-        BindUtils::configure($this->buildId, $this->debug ? 0 : 24 * 3600, 'view_bind');
+        BindUtils::configure($this->buildId, $this->debug ? 0 : self::CACHE_LIFETIME_SECONDS, 'view_bind');
     }
 }

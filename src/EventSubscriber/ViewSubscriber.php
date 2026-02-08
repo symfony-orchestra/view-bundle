@@ -22,6 +22,8 @@ use ChamberOrchestra\ViewBundle\View\ViewInterface;
 #[AsEventListener(ViewEvent::class)]
 readonly class ViewSubscriber
 {
+    private const SERIALIZATION_FORMAT = 'json';
+
     public function __construct(
         private SerializerInterface $serializer,
     )
@@ -34,9 +36,11 @@ readonly class ViewSubscriber
             return;
         }
 
+        $view = $view instanceof ResponseView ? $view : new DataView($view);
+
         $json = $this->serializer->serialize(
-            $view = $view instanceof ResponseView ? $view : new DataView($view),
-            'json',
+            $view,
+            self::SERIALIZATION_FORMAT,
             ['json_encode_options' => JsonResponse::DEFAULT_ENCODING_OPTIONS]
         );
 
