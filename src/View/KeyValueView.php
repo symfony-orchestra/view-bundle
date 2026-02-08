@@ -25,6 +25,6 @@ class KeyValueView extends View implements NormalizableInterface
 
     public function normalize(NormalizerInterface $normalizer, ?string $format = null, array $context = []): array
     {
-        return [$this->key => $this->view];
+        return [$this->key => $normalizer->normalize($this->view, $format, $context)];
     }
 }

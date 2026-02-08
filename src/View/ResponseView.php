@@ -17,13 +17,11 @@ use Symfony\Component\Serializer\Normalizer\NormalizerInterface;
 
 class ResponseView extends View implements NormalizableInterface
 {
-
     public function __construct(
         protected readonly int $status = Response::HTTP_OK,
         protected readonly array $headers = ['Content-Type' => 'application/json'],
     ) {
     }
-
 
     public function getStatus(): int
     {

@@ -12,10 +12,15 @@ final class KeyValueViewTest extends TestCase
 {
     public function testItReturnsKeyWithViewArray(): void
     {
-        $view = new KeyValueView('meta', ['page' => 1]);
+        $payload = ['page' => 1];
+        $view = new KeyValueView('meta', $payload);
 
         $normalizer = $this->createMock(NormalizerInterface::class);
-        $normalizer->expects(self::never())->method('normalize');
+        $normalizer
+            ->expects(self::once())
+            ->method('normalize')
+            ->with($payload, null, [])
+            ->willReturn($payload);
 
         $result = $view->normalize($normalizer);
 

@@ -1,0 +1,41 @@
+name: Tag Release
+
+on:
+  pull_request:
+    types: [closed]
+    branches: [master]
+
+permissions:
+  contents: write
+
+jobs:
+  tag:
+    if: github.event.pull_request.merged == true
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: master
+          fetch-depth: 0
+          fetch-tags: true
+
+      - name: Get latest tag and compute next patch version
+        id: version
+        run: |
+          latest=$(git tag --sort=-v:refname | grep -E '^v[0-9]+\.[0-9]+\.[0-9]+$' | head -1)
+          if [ -z "$latest" ]; then
+            echo "next=v0.0.1" >> "$GITHUB_OUTPUT"
+          else
+            major=$(echo "$latest" | cut -d. -f1)
+            minor=$(echo "$latest" | cut -d. -f2)
+            patch=$(echo "$latest" | cut -d. -f3)
+            next_patch=$((patch + 1))
+            echo "next=${major}.${minor}.${next_patch}" >> "$GITHUB_OUTPUT"
+          fi
+          echo "Latest tag: ${latest:-none}, next: $(cat "$GITHUB_OUTPUT" | grep next | cut -d= -f2)"
+
+      - name: Create and push tag
+        run: |
+          git tag "${{ steps.version.outputs.next }}"
+          git push origin "${{ steps.version.outputs.next }}"
