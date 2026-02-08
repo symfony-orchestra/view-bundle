@@ -13,6 +13,7 @@ namespace Tests\Unit\Attribute;
 
 use PHPUnit\Framework\TestCase;
 use ChamberOrchestra\ViewBundle\Attribute\Type;
+use ChamberOrchestra\ViewBundle\View\ViewInterface;
 
 final class TypeTest extends TestCase
 {
@@ -35,6 +36,20 @@ final class TypeTest extends TestCase
 
         $this->assertSame(DummyImageView::class, $instance->class);
     }
+
+    public function testAttributeRejectsNonExistentClass(): void
+    {
+        $this->expectException(\InvalidArgumentException::class);
+        $this->expectExceptionMessage('does not exist');
+        new Type('NonExistentClass');
+    }
+
+    public function testAttributeRejectsClassNotImplementingViewInterface(): void
+    {
+        $this->expectException(\InvalidArgumentException::class);
+        $this->expectExceptionMessage('must implement ViewInterface');
+        new Type(\stdClass::class);
+    }
 }
 
 final class DummyView
@@ -43,6 +58,6 @@ final class DummyView
     public array $images = [];
 }
 
-final class DummyImageView
+final class DummyImageView implements ViewInterface
 {
 }

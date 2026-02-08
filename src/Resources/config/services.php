@@ -20,6 +20,12 @@ return static function (ContainerConfigurator $container): void {
 
     $services
         ->load('ChamberOrchestra\\ViewBundle\\', '../../*')
-        ->exclude('../../{Exception,PropertyAccessor,Resources,Utils,View}');
+        ->exclude([
+            '../../Exception',
+            '../../PropertyAccessor',
+            '../../Resources',
+            '../../Utils',
+            '../../View',
+        ]);
 
 };

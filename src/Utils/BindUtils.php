@@ -41,6 +41,14 @@ class BindUtils
             return;
         }
 
+        if ($cacheLifetime < 0) {
+            throw new \InvalidArgumentException(\sprintf('Cache lifetime must be non-negative, got %d', $cacheLifetime));
+        }
+
+        if ($namespace === '') {
+            throw new \InvalidArgumentException('Cache namespace cannot be empty');
+        }
+
         static::$configured = true;
         static::$version = $buildId;
         static::$cacheLifetime = $cacheLifetime;
@@ -54,6 +62,14 @@ class BindUtils
     }
 
     /**
+     * Synchronizes properties from source object to target object by copying matching property values.
+     *
+     * Only properties with matching names and compatible types are synchronized. If a target property
+     * already has a non-null value that is publicly readable, it will not be overwritten.
+     *
+     * For properties typed as ViewInterface, the appropriate view class is instantiated automatically.
+     * For IterableView properties with a #[Type] attribute, typed collections are created.
+     *
      * @throws \ReflectionException
      */
     public function sync(object $target, object $source): void
@@ -61,12 +77,16 @@ class BindUtils
         foreach ($this->getIntersectedProperties($target, $source) as [$targetProperty, $sourceProperty]) {
             /** @var \ReflectionProperty $targetProperty */
             /** @var \ReflectionProperty $sourceProperty */
-            if ($this->getAccessor()->isStrictlyReadable($target, $targetProperty->getName())) {
-                if (null !== $this->getAccessor()->getValue($target, $targetProperty->getName())) {
+            $propertyName = $targetProperty->getName();
+
+            // Skip properties that already have non-null values
+            if ($this->getAccessor()->isStrictlyReadable($target, $propertyName)) {
+                if (null !== $this->getAccessor()->getValue($target, $propertyName)) {
                     continue;
                 }
             }
-            $this->getAccessor()->setValue($target, $targetProperty->getName(), $this->getValue($targetProperty, $sourceProperty, $source));
+
+            $this->getAccessor()->setValue($target, $propertyName, $this->getValue($targetProperty, $sourceProperty, $source));
         }
     }
 
@@ -76,8 +96,13 @@ class BindUtils
             return null;
         }
 
-        if ($this->isView($type = $targetProperty->getType())) {
-            /** @var \ReflectionNamedType $type */
+        $type = $targetProperty->getType();
+
+        if ($this->isView($type)) {
+            if (!$type instanceof \ReflectionNamedType) {
+                throw new \LogicException('Expected ReflectionNamedType for view instantiation');
+            }
+
             if ($this->isTypedIterableView($targetProperty)) {
                 return $this->buildIterableView($targetProperty, $value);
             }
@@ -90,7 +115,13 @@ class BindUtils
 
     private function isTypedIterableView(\ReflectionProperty $property): bool
     {
-        return \is_a($property->getType()->getName(), IterableView::class, true) && \count($property->getAttributes(Type::class)) > 0;
+        $type = $property->getType();
+
+        if (!$type instanceof \ReflectionNamedType) {
+            return false;
+        }
+
+        return \is_a($type->getName(), IterableView::class, true) && \count($property->getAttributes(Type::class)) > 0;
     }
 
     private function buildIterableView(\ReflectionProperty $property, iterable $value): IterableView
@@ -108,29 +139,38 @@ class BindUtils
      */
     private function getIntersectedProperties(object $target, object $source): array
     {
-        $key = \implode('@', [$targetClassName = ClassUtils::getClass($target), $sourceClassName = ClassUtils::getClass($source)]);
-        if (isset(self::$storage[$key])) {
-            return self::$storage[$key];
+        $targetClassName = ClassUtils::getClass($target);
+        $sourceClassName = ClassUtils::getClass($source);
+        $cacheKey = $targetClassName . '@' . $sourceClassName;
+
+        if (isset(self::$storage[$cacheKey])) {
+            return self::$storage[$cacheKey];
         }
 
         $targetProperties = $this->reflectionService->getReflectionProperties($targetClassName);
         $sourceProperties = $this->reflectionService->getReflectionProperties($sourceClassName);
 
         $intersection = [];
-        foreach (\array_intersect(\array_keys($targetProperties), \array_keys($sourceProperties)) as $key) {
-            /** @var \ReflectionProperty $targetProperty */
-            $targetProperty = $targetProperties[$key];
-            /** @var \ReflectionProperty $sourceProperty */
-            $sourceProperty = $sourceProperties[$key];
+        $commonProperties = \array_intersect_key($targetProperties, $sourceProperties);
 
-            if (!$this->isReflectionTypeValidForInitialization($targetProperty->getType(), $sourceProperty->getType())) {
+        foreach ($commonProperties as $propertyName => $targetProperty) {
+            $sourceProperty = $sourceProperties[$propertyName];
+
+            $targetType = $targetProperty->getType();
+            $sourceType = $sourceProperty->getType();
+
+            if ($targetType === null || $sourceType === null) {
                 continue;
             }
 
-            $intersection[$key] = [$targetProperty, $sourceProperty];
+            if (!$this->isReflectionTypeValidForInitialization($targetType, $sourceType)) {
+                continue;
+            }
+
+            $intersection[$propertyName] = [$targetProperty, $sourceProperty];
         }
 
-        return self::$storage[$key] = $intersection;
+        return self::$storage[$cacheKey] = $intersection;
     }
 
     private function isReflectionTypeValidForInitialization(\ReflectionType $targetType, \ReflectionType $sourceType): bool
@@ -181,12 +221,46 @@ class BindUtils
     private function getAccessor(): ReflectionPropertyAccessor
     {
         static $accessor;
-        return $accessor ??= new ReflectionPropertyAccessor(new PropertyAccessor(
+
+        if ($accessor !== null) {
+            return $accessor;
+        }
+
+        $accessorPrefixes = ['get', 'is', 'has'];
+        $disabledMutatorPrefixes = ['-', '-'];
+
+        $readExtractor = new ReflectionExtractor(
+            [],
+            $accessorPrefixes,
+            $disabledMutatorPrefixes,
+            false,
+            ReflectionExtractor::ALLOW_PRIVATE | ReflectionExtractor::ALLOW_PROTECTED | ReflectionExtractor::ALLOW_PUBLIC,
+            null,
+            ReflectionExtractor::DISALLOW_MAGIC_METHODS
+        );
+
+        $writeExtractor = new ReflectionExtractor(
+            ['set'],
+            $accessorPrefixes,
+            $disabledMutatorPrefixes,
+            false,
+            ReflectionExtractor::ALLOW_PUBLIC,
+            null,
+            ReflectionExtractor::DISALLOW_MAGIC_METHODS
+        );
+
+        $cache = static::$configured
+            ? PropertyAccessor::createCache(static::$cacheNamespace, static::$cacheLifetime, static::$version)
+            : null;
+
+        $propertyAccessor = new PropertyAccessor(
             ReflectionExtractor::DISALLOW_MAGIC_METHODS,
             PropertyAccessor::THROW_ON_INVALID_INDEX | PropertyAccessor::THROW_ON_INVALID_PROPERTY_PATH,
-            static::$configured ? PropertyAccessor::createCache(static::$cacheNamespace, static::$cacheLifetime, static::$version) : null,
-            new ReflectionExtractor([], $a = ['get', 'is', 'has'], $b = ['-', '-'], false, ReflectionExtractor::ALLOW_PRIVATE | ReflectionExtractor::ALLOW_PROTECTED | ReflectionExtractor::ALLOW_PUBLIC, null, ReflectionExtractor::DISALLOW_MAGIC_METHODS),
-            new ReflectionExtractor(['set'], $a, $b, false, ReflectionExtractor::ALLOW_PUBLIC, null, ReflectionExtractor::DISALLOW_MAGIC_METHODS)
-        ), $this->reflectionService);
+            $cache,
+            $readExtractor,
+            $writeExtractor
+        );
+
+        return $accessor = new ReflectionPropertyAccessor($propertyAccessor, $this->reflectionService);
     }
 }

@@ -30,7 +30,6 @@ readonly class ReflectionPropertyAccessor implements PropertyAccessorInterface
             $objectOrArray->__load();
         }
 
-        // only public properties of view are supported
         $this->decorated->setValue($objectOrArray, $propertyPath, $value);
     }
 
@@ -105,11 +104,13 @@ readonly class ReflectionPropertyAccessor implements PropertyAccessorInterface
         if ($e instanceof NoSuchPropertyException) {
             return true;
         }
-        $supported = [
-            '/^Cannot access (private|protected) property '.\preg_quote(\get_debug_type($objectOrArray), '/').'::\$'.$propertyPath.'$/',
-            '/^Can\'t get a way to read the property "'.$propertyPath.'" in class '.\preg_quote(\get_debug_type($objectOrArray), '/').'$/',
+        $objectType = \get_debug_type($objectOrArray);
+
+        $interceptablePatterns = [
+            '/^Cannot access (private|protected) property '.\preg_quote($objectType, '/').'::\$'.$propertyPath.'$/',
+            '/^Can\'t get a way to read the property "'.$propertyPath.'" in class '.\preg_quote($objectType, '/').'$/',
         ];
 
-        return \array_any($supported, fn($pattern) => \preg_match($pattern, $e->getMessage()));
+        return \array_any($interceptablePatterns, fn($pattern) => \preg_match($pattern, $e->getMessage()));
     }
 }

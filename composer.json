@@ -20,7 +20,7 @@
     }
   ],
   "require": {
-    "php": "^8.4",
+    "php": "^8.5",
     "symfony/http-kernel": "8.0.*",
     "symfony/serializer": "8.0.*",
     "symfony/property-access": "8.0.*",
@@ -31,7 +31,7 @@
     "symfony/runtime": "^8.0"
   },
   "require-dev": {
-    "phpunit/phpunit": "^12.5",
+  "phpunit/phpunit": "^13.0",
     "symfony/test-pack": "^1.2"
   },
   "autoload": {
