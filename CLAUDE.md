@@ -6,7 +6,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ChamberOrchestra View Bundle is a Symfony 8.0 bundle that provides a typed, reusable view layer for building JSON responses. Controllers return `ViewInterface` objects instead of `Response`; the bundle's event subscriber handles serialization to `JsonResponse` automatically.
 
-**Requirements**: PHP 8.4+, Symfony 8.0 components, doctrine/common ^3.5
+**Requirements**: PHP 8.5+, Symfony 8.0 components, doctrine/common ^3.5
 
 ## Commands
 

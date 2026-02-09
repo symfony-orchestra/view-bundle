@@ -15,7 +15,7 @@ use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Serializer\Normalizer\NormalizableInterface;
 use Symfony\Component\Serializer\Normalizer\NormalizerInterface;
 
-class ResponseView extends View implements NormalizableInterface
+class ResponseView extends View implements NormalizableInterface, ResponseViewInterface
 {
     public function __construct(
         protected readonly int $status = Response::HTTP_OK,

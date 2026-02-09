@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 use Symfony\Component\DependencyInjection\Loader\Configurator\ContainerConfigurator;
 use Symfony\Component\Serializer\Normalizer\CustomNormalizer;
+use ChamberOrchestra\ViewBundle\CacheWarmer\BindUtilsCacheWarmer;
+use ChamberOrchestra\ViewBundle\CacheWarmer\ViewMetadataCacheWarmer;
 use ChamberOrchestra\ViewBundle\Serializer\Normalizer\ViewNormalizer;
 
 return static function (ContainerConfigurator $container): void {
@@ -18,14 +20,39 @@ return static function (ContainerConfigurator $container): void {
     $services->set(CustomNormalizer::class);
     $services->set(ViewNormalizer::class);
 
+    // Configure cache warmers (ViewPass will inject View class names)
+    $services->set('chamber_orchestra.view_bundle.cache_warmer.view_metadata', ViewMetadataCacheWarmer::class)
+        ->autowire()
+        ->arg('$viewClasses', []); // Populated by ViewPass
+
+    $services->set('chamber_orchestra.view_bundle.cache_warmer.bind_utils', BindUtilsCacheWarmer::class)
+        ->arg('$viewClasses', []); // Populated by ViewPass
+
     $services
         ->load('ChamberOrchestra\\ViewBundle\\', '../../*')
         ->exclude([
+            '../../Attribute',
+            '../../CacheWarmer',
+            '../../DependencyInjection',
             '../../Exception',
             '../../PropertyAccessor',
             '../../Resources',
+            '../../Serializer/Metadata/ViewClassMetadata.php',
+            '../../Serializer/Metadata/ViewPropertyMetadata.php',
             '../../Utils',
             '../../View',
         ]);
+
+    // Load View classes for discovery (tagged with 'chamber_orchestra.view' and 'container.excluded')
+    // ViewPass will collect them and pass to cache warmers, then remove the definitions
+    $services
+        ->load('ChamberOrchestra\\ViewBundle\\View\\', '../../View/*')
+        ->exclude([
+            '../../View/ViewInterface.php',
+            '../../View/ResponseViewInterface.php',
+        ])
+        ->tag('container.excluded')
+        ->autowire(false)
+        ->autoconfigure(true); // Applies #[AutoconfigureTag] from ViewInterface
 
 };

@@ -11,11 +11,9 @@ declare(strict_types=1);
 
 namespace ChamberOrchestra\ViewBundle\View;
 
-use Symfony\Component\DependencyInjection\Attribute\AutoconfigureTag;
-use Symfony\Component\DependencyInjection\Attribute\Exclude;
-
-#[AutoconfigureTag('chamber_orchestra.view')]
-#[Exclude]
-interface ViewInterface
+interface ResponseViewInterface
 {
+    public function getStatus(): int;
+
+    public function getHeaders(): array;
 }
