@@ -11,8 +11,16 @@ declare(strict_types=1);
 
 namespace ChamberOrchestra\ViewBundle;
 
+use Symfony\Component\DependencyInjection\ContainerBuilder;
 use Symfony\Component\HttpKernel\Bundle\Bundle;
+use ChamberOrchestra\ViewBundle\DependencyInjection\ViewPass;
 
 class ChamberOrchestraViewBundle extends Bundle
 {
+    public function build(ContainerBuilder $container): void
+    {
+        parent::build($container);
+
+        $container->addCompilerPass(new ViewPass());
+    }
 }

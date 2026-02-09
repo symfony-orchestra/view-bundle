@@ -27,8 +27,10 @@ class BindUtils
     private static string $cacheNamespace = 'bind_view';
     private static int $cacheLifetime = 0;
     private static string $version = '';
-    private const MAX_CACHE_SIZE = 1024;
+    private static ?string $warmCachePath = null;
+    private const int MAX_CACHE_SIZE = 1024;
     private static array $storage = [];
+    private static ?array $warmedCache = null;
     private ReflectionService $reflectionService;
 
     private function __construct()
@@ -43,10 +45,11 @@ class BindUtils
      * @param string $buildId Unique build identifier for cache versioning (e.g., container.build_id)
      * @param int $cacheLifetime Cache lifetime in seconds (0 = disabled, used in debug mode)
      * @param string $namespace Cache namespace prefix to prevent collisions
+     * @param string|null $cacheDir Optional cache directory for loading warmed cache
      *
      * @throws \InvalidArgumentException If cacheLifetime is negative or namespace is empty
      */
-    public static function configure(string $buildId, int $cacheLifetime = 3600, string $namespace = 'bind_view'): void
+    public static function configure(string $buildId, int $cacheLifetime = 3600, string $namespace = 'bind_view', ?string $cacheDir = null): void
     {
         if (static::$configured) {
             return;
@@ -64,6 +67,7 @@ class BindUtils
         static::$version = $buildId;
         static::$cacheLifetime = $cacheLifetime;
         static::$cacheNamespace = $namespace;
+        static::$warmCachePath = $cacheDir ? $cacheDir . '/bind_utils_mappings.php' : null;
     }
 
     public static function instance(): self
@@ -158,10 +162,17 @@ class BindUtils
         $sourceClassName = ClassUtils::getClass($source);
         $cacheKey = $targetClassName . '@' . $sourceClassName;
 
+        // 1. Check runtime cache (existing)
         if (isset(self::$storage[$cacheKey])) {
             return self::$storage[$cacheKey];
         }
 
+        // 2. Check warmed cache (NEW)
+        if ($warmed = $this->loadFromWarmedCache($cacheKey)) {
+            return self::$storage[$cacheKey] = $warmed;
+        }
+
+        // 3. Fall back to reflection (existing)
         $targetProperties = $this->reflectionService->getReflectionProperties($targetClassName);
         $sourceProperties = $this->reflectionService->getReflectionProperties($sourceClassName);
 
@@ -190,6 +201,45 @@ class BindUtils
         }
 
         return self::$storage[$cacheKey] = $intersection;
+    }
+
+    /**
+     * Load property mappings from warmed cache
+     *
+     * @return array<string, array{0: \ReflectionProperty, 1: \ReflectionProperty}>|null
+     */
+    private function loadFromWarmedCache(string $cacheKey): ?array
+    {
+        if (self::$warmCachePath === null || !\file_exists(self::$warmCachePath)) {
+            return null;
+        }
+
+        // Load warmed cache file once
+        if (self::$warmedCache === null) {
+            self::$warmedCache = require self::$warmCachePath;
+        }
+
+        if (!isset(self::$warmedCache[$cacheKey])) {
+            return null;
+        }
+
+        $cached = self::$warmedCache[$cacheKey];
+        $result = [];
+
+        // Reconstruct ReflectionProperty objects from cached data
+        foreach ($cached as $propertyName => $data) {
+            [$targetData, $sourceData] = $data;
+
+            $targetReflection = new \ReflectionClass($targetData['class']);
+            $sourceReflection = new \ReflectionClass($sourceData['class']);
+
+            $result[$propertyName] = [
+                $targetReflection->getProperty($targetData['name']),
+                $sourceReflection->getProperty($sourceData['name']),
+            ];
+        }
+
+        return $result;
     }
 
     private function isReflectionTypeValidForInitialization(\ReflectionType $targetType, \ReflectionType $sourceType): bool

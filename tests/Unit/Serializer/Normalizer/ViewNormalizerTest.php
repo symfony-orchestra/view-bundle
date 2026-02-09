@@ -6,6 +6,7 @@ namespace Tests\Unit\Serializer\Normalizer;
 
 use PHPUnit\Framework\TestCase;
 use Symfony\Component\Serializer\Normalizer\NormalizerInterface;
+use ChamberOrchestra\ViewBundle\Serializer\Metadata\ViewMetadataFactory;
 use ChamberOrchestra\ViewBundle\Serializer\Normalizer\ViewNormalizer;
 use ChamberOrchestra\ViewBundle\View\View;
 use ChamberOrchestra\ViewBundle\View\ViewInterface;
@@ -14,7 +15,7 @@ final class ViewNormalizerTest extends TestCase
 {
     public function testSupportsOnlyViews(): void
     {
-        $normalizer = new ViewNormalizer();
+        $normalizer = new ViewNormalizer(new ViewMetadataFactory());
 
         $view = new class extends View {
         };
@@ -53,7 +54,7 @@ final class ViewNormalizerTest extends TestCase
                 return ['nested' => 'normalized'];
             });
 
-        $normalizer = new ViewNormalizer();
+        $normalizer = new ViewNormalizer(new ViewMetadataFactory());
         $normalizer->setNormalizer($inner);
 
         $result = $normalizer->normalize($view, 'json', ['k' => 'v']);

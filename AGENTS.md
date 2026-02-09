@@ -5,10 +5,12 @@
 - Bundle entry point is `src/ChamberOrchestraViewBundle.php`; shared helpers sit in `src/Utils/` and `src/PropertyAccessor/`.
 - Tests belong in `tests/` (autoloaded as `Tests\`); tools are in `bin/` (`bin/phpunit`).
 - Autoloading is PSR-4; place new modules inside `src/` with matching namespaces.
+- Requirements: PHP 8.5+, Symfony 8.0 components, `doctrine/common` ^3.5.
 
 ## Build, Test, and Development Commands
 - Install dependencies: `composer install` (PHP 8.4+, Symfony 8.0 components).
-- Run the suite: `./bin/phpunit` (uses `phpunit.xml.dist`). Add `--filter ClassNameTest` to scope.
+- Run the suite: `./bin/phpunit` (uses `phpunit.xml.dist`). Add `--filter ClassNameTest` or `--filter testMethodName` to scope.
+- `composer test` is an alias for `./bin/phpunit`.
 - Quick lint: `php -l path/to/File.php`; keep code PSR-12 even though no fixer is bundled.
 - In host apps, return a `ViewInterface` object from controllers instead of `Response`.
 
@@ -21,6 +23,7 @@
 
 ## Testing Guidelines
 - Use PHPUnit (12.x). Name files `*Test.php` mirroring the class under test (e.g., `View/DataViewTest.php`).
+- Unit tests live in `tests/Unit/` (`TestCase`); integration tests in `tests/Integrational/` (`KernelTestCase`) using `Tests\Integrational\TestKernel`.
 - Keep tests deterministic; use data providers for mapping scenarios and caches.
 - Cover serializer/property accessor mapping, nullable cases, and cache behavior.
 - Target high coverage on `View/`, `Attribute/`, and subscriber behaviors; include regression tests when fixing bugs.

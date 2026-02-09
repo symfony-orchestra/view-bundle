@@ -11,13 +11,13 @@ declare(strict_types=1);
 
 namespace ChamberOrchestra\ViewBundle\EventSubscriber;
 
+use ChamberOrchestra\ViewBundle\View\DataView;
+use ChamberOrchestra\ViewBundle\View\ResponseViewInterface;
+use ChamberOrchestra\ViewBundle\View\ViewInterface;
 use Symfony\Component\EventDispatcher\Attribute\AsEventListener;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpKernel\Event\ViewEvent;
 use Symfony\Component\Serializer\SerializerInterface;
-use ChamberOrchestra\ViewBundle\View\DataView;
-use ChamberOrchestra\ViewBundle\View\ResponseView;
-use ChamberOrchestra\ViewBundle\View\ViewInterface;
 
 #[AsEventListener(ViewEvent::class)]
 readonly class ViewSubscriber
@@ -26,8 +26,7 @@ readonly class ViewSubscriber
 
     public function __construct(
         private SerializerInterface $serializer,
-    )
-    {
+    ) {
     }
 
     public function __invoke(ViewEvent $event): void
@@ -36,7 +35,7 @@ readonly class ViewSubscriber
             return;
         }
 
-        $view = $view instanceof ResponseView ? $view : new DataView($view);
+        $view = $view instanceof ResponseViewInterface ? $view : new DataView($view);
 
         $json = $this->serializer->serialize(
             $view,
