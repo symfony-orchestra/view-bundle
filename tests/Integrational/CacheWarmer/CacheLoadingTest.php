@@ -68,9 +68,9 @@ final class CacheLoadingTest extends TestCase
         $metadata = $factory->getMetadata($testView::class);
 
         self::assertSame($testView::class, $metadata->className);
-        self::assertCount(2, $metadata->getProperties());
+        self::assertCount(2, $metadata->properties);
 
-        $propNames = \array_map(fn($p) => $p->name, $metadata->getProperties());
+        $propNames = \array_map(fn($p) => $p->name, $metadata->properties);
         self::assertContains('name', $propNames);
         self::assertContains('count', $propNames);
     }
@@ -88,8 +88,8 @@ final class CacheLoadingTest extends TestCase
         $metadata = $factory->getMetadata($testView::class);
 
         self::assertSame($testView::class, $metadata->className);
-        self::assertCount(1, $metadata->getProperties());
-        self::assertSame('fallback', $metadata->getProperties()[0]->name);
+        self::assertCount(1, $metadata->properties);
+        self::assertSame('fallback', $metadata->properties[0]->name);
     }
 
     public function testBindUtilsLoadsFromWarmedCache(): void

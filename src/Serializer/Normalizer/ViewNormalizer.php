@@ -31,7 +31,7 @@ class ViewNormalizer implements NormalizerInterface, NormalizerAwareInterface
         $metadata = $this->metadataFactory->getMetadata($data::class);
         $collection = [];
 
-        foreach ($metadata->getProperties() as $property) {
+        foreach ($metadata->properties as $property) {
             $value = $data->{$property->name};
 
             // Skip null values efficiently (no reflection needed)

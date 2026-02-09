@@ -22,12 +22,4 @@ final readonly class ViewClassMetadata
         public array $properties,
     ) {
     }
-
-    /**
-     * @return array<ViewPropertyMetadata>
-     */
-    public function getProperties(): array
-    {
-        return $this->properties;
-    }
 }

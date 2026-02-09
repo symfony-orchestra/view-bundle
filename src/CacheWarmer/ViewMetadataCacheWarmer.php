@@ -43,7 +43,7 @@ final readonly class ViewMetadataCacheWarmer implements CacheWarmerInterface
 
             // Serialize metadata to array format for export (skip type info - not needed)
             $properties = [];
-            foreach ($classMetadata->getProperties() as $property) {
+            foreach ($classMetadata->properties as $property) {
                 $properties[] = [
                     'name' => $property->name,
                     'nullable' => $property->nullable,
