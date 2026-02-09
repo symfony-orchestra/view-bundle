@@ -21,12 +21,15 @@ return static function (ContainerConfigurator $container): void {
     $services->set(ViewNormalizer::class);
 
     // Configure cache warmers (ViewPass will inject View class names)
+    // Note: $buildId is set in ChamberOrchestraViewExtension (container.build_id is unavailable at load time)
     $services->set('chamber_orchestra.view_bundle.cache_warmer.view_metadata', ViewMetadataCacheWarmer::class)
         ->autowire()
-        ->arg('$viewClasses', []); // Populated by ViewPass
+        ->arg('$viewClasses', []) // Populated by ViewPass
+        ->arg('$shareDir', '%kernel.share_dir%');
 
     $services->set('chamber_orchestra.view_bundle.cache_warmer.bind_utils', BindUtilsCacheWarmer::class)
-        ->arg('$viewClasses', []); // Populated by ViewPass
+        ->arg('$viewClasses', []) // Populated by ViewPass
+        ->arg('$shareDir', '%kernel.share_dir%');
 
     $services
         ->load('ChamberOrchestra\\ViewBundle\\', '../../*')

@@ -28,10 +28,11 @@ final class ViewMetadataFactory
     private readonly ?string $warmCachePath;
 
     public function __construct(
-        #[Autowire('%kernel.cache_dir%')]
-        ?string $cacheDir = null,
+        #[Autowire('%kernel.share_dir%')]
+        ?string $shareDir = null,
+        ?string $buildId = null,
     ) {
-        $this->warmCachePath = $cacheDir ? $cacheDir . '/view_metadata.php' : null;
+        $this->warmCachePath = $shareDir && $buildId ? $shareDir . "/view_metadata_{$buildId}.php" : null;
     }
 
     /**

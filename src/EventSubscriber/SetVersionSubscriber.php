@@ -25,8 +25,8 @@ readonly class SetVersionSubscriber
         private string $buildId = '',
         #[Autowire('%env(bool:APP_DEBUG)%')]
         private bool $debug = false,
-        #[Autowire('%kernel.cache_dir%')]
-        private ?string $cacheDir = null,
+        #[Autowire('%kernel.share_dir%')]
+        private ?string $shareDir = null,
     )
     {
     }
@@ -37,7 +37,7 @@ readonly class SetVersionSubscriber
             $this->buildId,
             $this->debug ? 0 : self::CACHE_LIFETIME_SECONDS,
             'view_bind',
-            $this->cacheDir
+            $this->shareDir
         );
     }
 }

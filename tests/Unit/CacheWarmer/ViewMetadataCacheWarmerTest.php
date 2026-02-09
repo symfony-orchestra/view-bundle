@@ -29,7 +29,7 @@ final class ViewMetadataCacheWarmerTest extends TestCase
 
     public function testIsNotOptional(): void
     {
-        $warmer = new ViewMetadataCacheWarmer(new ViewMetadataFactory(), []);
+        $warmer = new ViewMetadataCacheWarmer(new ViewMetadataFactory(), [], '', 'test-build');
         self::assertFalse($warmer->isOptional());
     }
 
@@ -42,12 +42,12 @@ final class ViewMetadataCacheWarmerTest extends TestCase
 
         $viewClasses = [$testViewClass::class];
         $factory = new ViewMetadataFactory();
-        $warmer = new ViewMetadataCacheWarmer($factory, $viewClasses);
+        $warmer = new ViewMetadataCacheWarmer($factory, $viewClasses, '', 'test-build');
 
         $files = $warmer->warmUp($this->cacheDir);
 
         self::assertCount(1, $files);
-        self::assertSame($this->cacheDir . '/view_metadata.php', $files[0]);
+        self::assertSame($this->cacheDir . '/view_metadata_test-build.php', $files[0]);
         self::assertFileExists($files[0]);
     }
 
@@ -61,7 +61,7 @@ final class ViewMetadataCacheWarmerTest extends TestCase
 
         $viewClasses = [$testViewClass::class];
         $factory = new ViewMetadataFactory();
-        $warmer = new ViewMetadataCacheWarmer($factory, $viewClasses);
+        $warmer = new ViewMetadataCacheWarmer($factory, $viewClasses, '', 'test-build');
 
         $files = $warmer->warmUp($this->cacheDir);
         $cached = require $files[0];
@@ -96,7 +96,7 @@ final class ViewMetadataCacheWarmerTest extends TestCase
     public function testHandlesEmptyViewClasses(): void
     {
         $factory = new ViewMetadataFactory();
-        $warmer = new ViewMetadataCacheWarmer($factory, []);
+        $warmer = new ViewMetadataCacheWarmer($factory, [], '', 'test-build');
 
         $files = $warmer->warmUp($this->cacheDir);
 
@@ -119,7 +119,7 @@ final class ViewMetadataCacheWarmerTest extends TestCase
 
         $viewClasses = [$view1::class, $view2::class];
         $factory = new ViewMetadataFactory();
-        $warmer = new ViewMetadataCacheWarmer($factory, $viewClasses);
+        $warmer = new ViewMetadataCacheWarmer($factory, $viewClasses, '', 'test-build');
 
         $files = $warmer->warmUp($this->cacheDir);
         $cached = require $files[0];

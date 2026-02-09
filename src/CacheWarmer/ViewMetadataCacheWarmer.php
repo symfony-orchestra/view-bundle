@@ -23,6 +23,8 @@ final readonly class ViewMetadataCacheWarmer implements CacheWarmerInterface
     public function __construct(
         private ViewMetadataFactory $metadataFactory,
         private array $viewClasses,
+        private string $shareDir = '',
+        private string $buildId = '',
     ) {
     }
 
@@ -57,12 +59,14 @@ final readonly class ViewMetadataCacheWarmer implements CacheWarmerInterface
             ];
         }
 
-        // Generate optimized PHP file
+        // Generate optimized PHP file in the share directory, versioned by build ID
+        $outputDir = $this->shareDir !== '' ? $this->shareDir : $cacheDir;
+        $filename = $this->buildId !== '' ? "view_metadata_{$this->buildId}.php" : 'view_metadata.php';
         $code = "<?php\n\nreturn " . VarExporter::export($metadata) . ";\n";
-        $path = $cacheDir . '/view_metadata.php';
+        $path = $outputDir . '/' . $filename;
 
-        if (!\is_dir($cacheDir)) {
-            \mkdir($cacheDir, 0777, true);
+        if (!\is_dir($outputDir)) {
+            \mkdir($outputDir, 0777, true);
         }
 
         \file_put_contents($path, $code);

@@ -45,11 +45,11 @@ class BindUtils
      * @param string $buildId Unique build identifier for cache versioning (e.g., container.build_id)
      * @param int $cacheLifetime Cache lifetime in seconds (0 = disabled, used in debug mode)
      * @param string $namespace Cache namespace prefix to prevent collisions
-     * @param string|null $cacheDir Optional cache directory for loading warmed cache
+     * @param string|null $shareDir Optional share directory for loading warmed cache
      *
      * @throws \InvalidArgumentException If cacheLifetime is negative or namespace is empty
      */
-    public static function configure(string $buildId, int $cacheLifetime = 3600, string $namespace = 'bind_view', ?string $cacheDir = null): void
+    public static function configure(string $buildId, int $cacheLifetime = 3600, string $namespace = 'bind_view', ?string $shareDir = null): void
     {
         if (static::$configured) {
             return;
@@ -67,7 +67,7 @@ class BindUtils
         static::$version = $buildId;
         static::$cacheLifetime = $cacheLifetime;
         static::$cacheNamespace = $namespace;
-        static::$warmCachePath = $cacheDir ? $cacheDir . '/bind_utils_mappings.php' : null;
+        static::$warmCachePath = $shareDir ? $shareDir . "/bind_utils_mappings_{$buildId}.php" : null;
     }
 
     public static function instance(): self

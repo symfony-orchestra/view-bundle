@@ -17,6 +17,7 @@ use Symfony\Component\DependencyInjection\Extension\Extension;
 use Symfony\Component\DependencyInjection\Loader\PhpFileLoader;
 use Symfony\Component\DependencyInjection\Parameter;
 use ChamberOrchestra\ViewBundle\EventSubscriber\SetVersionSubscriber;
+use ChamberOrchestra\ViewBundle\Serializer\Metadata\ViewMetadataFactory;
 
 class ChamberOrchestraViewExtension extends Extension
 {
@@ -28,6 +29,11 @@ class ChamberOrchestraViewExtension extends Extension
 
     private function registerViewCache(ContainerBuilder $container): void
     {
-        $container->getDefinition(SetVersionSubscriber::class)->setArgument('$buildId', new Parameter('container.build_id'));
+        $buildId = new Parameter('container.build_id');
+
+        $container->getDefinition(SetVersionSubscriber::class)->setArgument('$buildId', $buildId);
+        $container->getDefinition(ViewMetadataFactory::class)->setArgument('$buildId', $buildId);
+        $container->getDefinition('chamber_orchestra.view_bundle.cache_warmer.view_metadata')->setArgument('$buildId', $buildId);
+        $container->getDefinition('chamber_orchestra.view_bundle.cache_warmer.bind_utils')->setArgument('$buildId', $buildId);
     }
 }
