@@ -99,7 +99,7 @@ This generates:
 
 ## Development & Tests
 - Install deps: `composer install`
-- Run unit/integration tests: `./bin/phpunit` (85 tests, 313 assertions)
+- Run unit/integration tests: `./bin/phpunit` 
 - Namespaces live under `ChamberOrchestra\ViewBundle`; autoloaded PSR-4 from `src/`.
 
 ## Performance Benchmarking
@@ -132,5 +132,4 @@ vendor/bin/phpbench run --report=default
 - Operations per second: 300,000+ normalizations/sec
 - Memory overhead: Minimal (cached metadata)
 
-See `docs/PERFORMANCE_TESTING.md` for comprehensive testing guide.
 
