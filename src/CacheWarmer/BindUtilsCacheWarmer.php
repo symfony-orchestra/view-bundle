@@ -22,6 +22,8 @@ final readonly class BindUtilsCacheWarmer implements CacheWarmerInterface
      */
     public function __construct(
         private array $viewClasses,
+        private string $shareDir = '',
+        private string $buildId = '',
     ) {
     }
 
@@ -56,12 +58,14 @@ final readonly class BindUtilsCacheWarmer implements CacheWarmerInterface
             }
         }
 
-        // Generate optimized PHP file
+        // Generate optimized PHP file in the share directory, versioned by build ID
+        $outputDir = $this->shareDir !== '' ? $this->shareDir : $cacheDir;
+        $filename = $this->buildId !== '' ? "bind_utils_mappings_{$this->buildId}.php" : 'bind_utils_mappings.php';
         $code = "<?php\n\nreturn " . VarExporter::export($mappings) . ";\n";
-        $path = $cacheDir . '/bind_utils_mappings.php';
+        $path = $outputDir . '/' . $filename;
 
-        if (!\is_dir($cacheDir)) {
-            \mkdir($cacheDir, 0777, true);
+        if (!\is_dir($outputDir)) {
+            \mkdir($outputDir, 0777, true);
         }
 
         \file_put_contents($path, $code);

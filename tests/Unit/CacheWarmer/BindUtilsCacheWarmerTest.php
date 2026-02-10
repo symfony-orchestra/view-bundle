@@ -28,7 +28,7 @@ final class BindUtilsCacheWarmerTest extends TestCase
 
     public function testIsOptional(): void
     {
-        $warmer = new BindUtilsCacheWarmer([]);
+        $warmer = new BindUtilsCacheWarmer([], '', 'test-build');
         self::assertTrue($warmer->isOptional());
     }
 
@@ -40,12 +40,12 @@ final class BindUtilsCacheWarmerTest extends TestCase
         };
 
         $viewClasses = [$testView::class];
-        $warmer = new BindUtilsCacheWarmer($viewClasses);
+        $warmer = new BindUtilsCacheWarmer($viewClasses, '', 'test-build');
 
         $files = $warmer->warmUp($this->cacheDir);
 
         self::assertCount(1, $files);
-        self::assertSame($this->cacheDir . '/bind_utils_mappings.php', $files[0]);
+        self::assertSame($this->cacheDir . '/bind_utils_mappings_test-build.php', $files[0]);
         self::assertFileExists($files[0]);
     }
 
@@ -62,7 +62,7 @@ final class BindUtilsCacheWarmerTest extends TestCase
         };
 
         $viewClasses = [$testView1::class, $testView2::class];
-        $warmer = new BindUtilsCacheWarmer($viewClasses);
+        $warmer = new BindUtilsCacheWarmer($viewClasses, '', 'test-build');
 
         $files = $warmer->warmUp($this->cacheDir);
         $cached = require $files[0];
@@ -88,7 +88,7 @@ final class BindUtilsCacheWarmerTest extends TestCase
 
     public function testHandlesEmptyViewClasses(): void
     {
-        $warmer = new BindUtilsCacheWarmer([]);
+        $warmer = new BindUtilsCacheWarmer([], '', 'test-build');
 
         $files = $warmer->warmUp($this->cacheDir);
 
@@ -114,7 +114,7 @@ final class BindUtilsCacheWarmerTest extends TestCase
         };
 
         $viewClasses = [$view1::class, $view2::class, $view3::class];
-        $warmer = new BindUtilsCacheWarmer($viewClasses);
+        $warmer = new BindUtilsCacheWarmer($viewClasses, '', 'test-build');
 
         $files = $warmer->warmUp($this->cacheDir);
         $cached = require $files[0];
