@@ -1,3 +1,5 @@
 /vendor/
+/var/
 composer.lock
 .claude/settings.local.json
+.phpunit.cache/
