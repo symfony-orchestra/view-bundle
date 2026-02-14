@@ -1,20 +1,36 @@
 [![PHP Composer](https://github.com/chamber-orchestra/view-bundle/actions/workflows/php.yml/badge.svg)](https://github.com/chamber-orchestra/view-bundle/actions/workflows/php.yml)
+[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
+[![PHP 8.5+](https://img.shields.io/badge/PHP-8.5%2B-777BB4.svg)](https://www.php.net/)
+[![Symfony 8.0](https://img.shields.io/badge/Symfony-8.0-000000.svg)](https://symfony.com/)
 
 # ChamberOrchestra View Bundle
 
-A lightweight Symfony bundle for building typed, reusable JSON responses. Views encapsulate serialization concerns so controllers can return simple objects instead of `Response`.
+A typed, high-performance Symfony bundle for building reusable JSON API responses. Controllers return plain view objects instead of `Response` — the bundle handles serialization, null stripping, and content negotiation automatically.
+
+## Key Features
+
+- **Typed view layer** — define response shapes as PHP classes with typed properties
+- **Automatic property binding** — `BindView` maps domain objects to views via reflection
+- **Collection mapping** — `IterableView` transforms collections with typed element views
+- **Null stripping** — null values are automatically excluded from JSON output
+- **Production cache warming** — pre-computed metadata and property mappings eliminate reflection at runtime
+- **Build-versioned caching** — cache files are tied to `container.build_id` for safe deployments
+- **Doctrine proxy support** — transparent lazy-load initialization before property access
 
 ## Requirements
+
 - PHP 8.5+
-- Symfony 8.0 components (http-kernel, serializer, property-access, dependency-injection, config)
+- Symfony 8.0 components (http-kernel, serializer, property-access, dependency-injection, config, framework-bundle)
 - doctrine/common ^3.5
 
 ## Installation
+
 ```bash
 composer require chamber-orchestra/view-bundle:8.0.*
 ```
 
 Enable the bundle in `config/bundles.php`:
+
 ```php
 return [
     // ...
@@ -23,7 +39,9 @@ return [
 ```
 
 ## Quickstart
+
 Create a view that maps fields from a domain object:
+
 ```php
 use ChamberOrchestra\ViewBundle\View\BindView;
 use ChamberOrchestra\ViewBundle\Attribute\Type;
@@ -50,6 +68,7 @@ final class ImageView extends BindView
 ```
 
 Return a view from a controller:
+
 ```php
 #[Route('/user/me', methods: ['GET'])]
 final class GetMeAction
@@ -60,77 +79,104 @@ final class GetMeAction
     }
 }
 ```
-`ViewSubscriber` converts any `ViewInterface` result into a `JsonResponse`. Non-view results are ignored.
+
+`ViewSubscriber` converts any `ViewInterface` result into a `JsonResponse`. Non-view results pass through unchanged.
 
 ## Core Views
-- `ResponseView`: base response with status (200) and headers (`Content-Type: application/json`), overridable in subclasses.
-- `DataView`: wraps payload under `data`.
-- `BindView`: maps matching properties from a source object to the view; honors `Attribute\Type` on `IterableView` properties for typed collections.
-- `IterableView`: maps collections via a callback or view class string.
-- `KeyValueView`: returns an associative array for metadata blocks.
+
+| View | Purpose |
+|------|---------|
+| `ResponseView` | Base response with HTTP status (200) and `Content-Type: application/json` headers |
+| `DataView` | Wraps any view or array under a `"data"` key |
+| `BindView` | Maps matching properties from a source object using reflection |
+| `IterableView` | Maps collections via a callback or view class string |
+| `KeyValueView` | Produces associative array output for metadata blocks |
+
+### BindView Property Binding
+
+`BindView` uses `BindUtils` to synchronize properties between source objects and view instances. It handles:
+
+- Built-in PHP types and custom objects
+- `ViewInterface` subclasses (auto-constructed)
+- `IterableView` properties with `#[Type(ViewClass::class)]` attribute for typed collections
+- Skips union types and incompatible type pairs
+
+## Architecture
+
+### Request/Response Flow
+
+1. **SetVersionSubscriber** (priority 256) — configures `BindUtils` with `kernel.share_dir`, `container.build_id`, and enables property accessor caching when `APP_DEBUG=false`
+2. Controller returns a `ViewInterface` object
+3. **ViewSubscriber** — detects `ViewInterface` results, wraps non-`ResponseViewInterface` in `DataView`, serializes to JSON via `ViewNormalizer`
+
+### View Auto-Discovery
+
+Views implementing `ViewInterface` are automatically tagged with `chamber_orchestra.view` via `#[AutoconfigureTag]`. The `ViewPass` compiler pass collects these classes and passes them to cache warmers for pre-computation.
 
 ## Performance Optimizations
 
-The bundle includes two-phase optimization for production environments:
+The bundle includes a two-phase optimization strategy for production environments:
 
-**Phase 1: Runtime Metadata Caching**
+### Phase 1: Runtime Metadata Caching
+
 - `ViewMetadataFactory` caches property metadata in memory
 - Direct property access eliminates repeated reflection calls
-- 30-50% faster normalization
+- 30-50% faster normalization on repeated calls
 
-**Phase 2: Persistent Cache Warming**
-- `ViewMetadataCacheWarmer` pre-computes view metadata at build time
-- `BindUtilsCacheWarmer` pre-computes View-to-View property mappings
-- Generated opcache-optimized PHP files in cache directory
+### Phase 2: Build-Time Cache Warming
+
+- `ViewMetadataCacheWarmer` pre-computes view property metadata at build time
+- `BindUtilsCacheWarmer` pre-computes view-to-view property mappings
+- Generated opcache-optimized PHP files stored in `kernel.share_dir`
+- Cache files are versioned with `container.build_id` for safe deployments
 - 60-80% reduction in reflection overhead on production requests
-- Automatic cache invalidation via `container.build_id`
+- Automatic fallback to reflection when warmed cache is unavailable
 
-**Cache Configuration**
-`SetVersionSubscriber` configures `BindUtils` with cache directory and build ID. When `APP_DEBUG=false`, caching is enabled with 24h lifetime and namespace `view_bind`.
+### Cache Configuration
+
+`SetVersionSubscriber` configures `BindUtils` with the share directory and build ID. When `APP_DEBUG=false`, property accessor caching is enabled with a 24-hour lifetime.
 
 **Warm the cache in production:**
+
 ```bash
 bin/console cache:warmup --env=prod
 ```
 
-This generates:
-- `var/cache/prod/view_metadata.php` - View property metadata
-- `var/cache/prod/bind_utils_mappings.php` - Property mappings
+This generates build-versioned files in the shared cache directory:
+- View property metadata (nullability, defaults, types)
+- View-to-view property mappings for `BindUtils`
 
-## Development & Tests
-- Install deps: `composer install`
-- Run unit/integration tests: `./bin/phpunit` (85 tests, 313 assertions)
-- Namespaces live under `ChamberOrchestra\ViewBundle`; autoloaded PSR-4 from `src/`.
-
-## Performance Benchmarking
+## Benchmarking
 
 Benchmark tools are included to measure optimization impact:
 
-**Quick performance test:**
 ```bash
+# Quick normalization timing
 php benchmark/simple-timing.php
-```
 
-**Cache warmup impact test:**
-```bash
+# Cache warmup impact test
 php benchmark/cache-warmup-test.php
-```
 
-**Memory usage analysis:**
-```bash
+# Memory usage analysis
 php benchmark/memory-test.php
 ```
 
-**Professional benchmarking with PHPBench:**
+**PHPBench integration:**
+
 ```bash
 composer require --dev phpbench/phpbench
 vendor/bin/phpbench run --report=default
 ```
 
-**Expected Results:**
-- Normalization: 2-3x faster with cache warming
-- Operations per second: 300,000+ normalizations/sec
-- Memory overhead: Minimal (cached metadata)
+## Development
 
-See `docs/PERFORMANCE_TESTING.md` for comprehensive testing guide.
+```bash
+composer install          # Install dependencies
+composer test             # Run all tests (87 tests, 326 assertions)
+./bin/phpunit             # Run tests directly
+./bin/phpunit --filter X  # Run specific test class or method
+```
 
+## License
+
+MIT
