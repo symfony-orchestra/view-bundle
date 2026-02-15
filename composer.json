@@ -1,15 +1,20 @@
 {
   "name": "chamber-orchestra/view-bundle",
-  "type": "library",
-  "description": "The view symfony bundle for JSON API responses",
+  "type": "symfony-bundle",
+  "description": "Symfony bundle providing a typed, reusable view layer for building JSON API responses with automatic property binding and cache-warmed serialization",
   "keywords": [
     "symfony",
-    "view-bundle",
+    "symfony-bundle",
     "view",
-    "api",
+    "json-api",
+    "api-response",
+    "serialization",
+    "property-binding",
     "json",
-    "typescript"
+    "rest-api",
+    "view-model"
   ],
+  "homepage": "https://github.com/chamber-orchestra/view-bundle",
   "license": "MIT",
   "authors": [
     {
@@ -19,6 +24,10 @@
       "role": "Developer"
     }
   ],
+  "support": {
+    "issues": "https://github.com/chamber-orchestra/view-bundle/issues",
+    "source": "https://github.com/chamber-orchestra/view-bundle"
+  },
   "require": {
     "php": "^8.5",
     "symfony/http-kernel": "8.0.*",

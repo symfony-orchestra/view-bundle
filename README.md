@@ -5,16 +5,18 @@
 
 # ChamberOrchestra View Bundle
 
-A typed, high-performance Symfony bundle for building reusable JSON API responses. Controllers return plain view objects instead of `Response` — the bundle handles serialization, null stripping, and content negotiation automatically.
+A Symfony bundle that provides a **typed view layer for JSON API responses**. Define response shapes as PHP classes, return them from controllers, and let the bundle handle serialization automatically — no manual `JsonResponse` construction needed.
+
+Built for **Symfony 8.0** and **PHP 8.5+**, the bundle eliminates boilerplate in REST API controllers by introducing view models with automatic property binding, collection mapping, and production-ready cache warming.
 
 ## Key Features
 
-- **Typed view layer** — define response shapes as PHP classes with typed properties
-- **Automatic property binding** — `BindView` maps domain objects to views via reflection
-- **Collection mapping** — `IterableView` transforms collections with typed element views
-- **Null stripping** — null values are automatically excluded from JSON output
-- **Production cache warming** — pre-computed metadata and property mappings eliminate reflection at runtime
-- **Build-versioned caching** — cache files are tied to `container.build_id` for safe deployments
+- **Typed view models** — define JSON response structures as PHP classes with typed properties
+- **Automatic property binding** — `BindView` maps domain object properties to view properties via reflection
+- **Collection mapping** — `IterableView` transforms arrays and iterables with typed element views
+- **Null stripping** — null values are automatically excluded from serialized JSON output
+- **Build-time cache warming** — pre-computed metadata and property mappings eliminate reflection overhead in production
+- **Build-versioned caching** — cache files are tied to `container.build_id` for zero-downtime deployments
 - **Doctrine proxy support** — transparent lazy-load initialization before property access
 
 ## Requirements
@@ -38,9 +40,9 @@ return [
 ];
 ```
 
-## Quickstart
+## Quick Start
 
-Create a view that maps fields from a domain object:
+Define a view model that maps properties from a domain object:
 
 ```php
 use ChamberOrchestra\ViewBundle\View\BindView;
@@ -67,7 +69,7 @@ final class ImageView extends BindView
 }
 ```
 
-Return a view from a controller:
+Return the view from a controller — the bundle converts it to a `JsonResponse` automatically:
 
 ```php
 #[Route('/user/me', methods: ['GET'])]
@@ -82,7 +84,7 @@ final class GetMeAction
 
 `ViewSubscriber` converts any `ViewInterface` result into a `JsonResponse`. Non-view results pass through unchanged.
 
-## Core Views
+## View Types
 
 | View | Purpose |
 |------|---------|
@@ -146,9 +148,9 @@ This generates build-versioned files in the shared cache directory:
 - View property metadata (nullability, defaults, types)
 - View-to-view property mappings for `BindUtils`
 
-## Benchmarking
+## Benchmarks
 
-Benchmark tools are included to measure optimization impact:
+Benchmark scripts are included to measure serialization performance and cache impact:
 
 ```bash
 # Quick normalization timing
