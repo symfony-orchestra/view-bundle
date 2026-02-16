@@ -11,9 +11,9 @@ declare(strict_types=1);
 
 namespace ChamberOrchestra\ViewBundle\CacheWarmer;
 
+use ChamberOrchestra\ViewBundle\PropertyAccessor\ReflectionService;
 use Symfony\Component\HttpKernel\CacheWarmer\CacheWarmerInterface;
 use Symfony\Component\VarExporter\VarExporter;
-use ChamberOrchestra\ViewBundle\PropertyAccessor\ReflectionService;
 
 final readonly class BindUtilsCacheWarmer implements CacheWarmerInterface
 {
@@ -43,7 +43,7 @@ final readonly class BindUtilsCacheWarmer implements CacheWarmerInterface
         // Pre-compute View-to-View property mappings
         foreach ($this->viewClasses as $targetClass) {
             foreach ($this->viewClasses as $sourceClass) {
-                $cacheKey = $targetClass . '@' . $sourceClass;
+                $cacheKey = $targetClass.'@'.$sourceClass;
 
                 try {
                     $mappings[$cacheKey] = $this->computeIntersection(
@@ -59,10 +59,10 @@ final readonly class BindUtilsCacheWarmer implements CacheWarmerInterface
         }
 
         // Generate optimized PHP file in the share directory, versioned by build ID
-        $outputDir = $this->shareDir !== '' ? $this->shareDir : $cacheDir;
-        $filename = $this->buildId !== '' ? "bind_utils_mappings_{$this->buildId}.php" : 'bind_utils_mappings.php';
-        $code = "<?php\n\nreturn " . VarExporter::export($mappings) . ";\n";
-        $path = $outputDir . '/' . $filename;
+        $outputDir = '' !== $this->shareDir ? $this->shareDir : $cacheDir;
+        $filename = '' !== $this->buildId ? "bind_utils_mappings_{$this->buildId}.php" : 'bind_utils_mappings.php';
+        $code = "<?php\n\nreturn ".VarExporter::export($mappings).";\n";
+        $path = $outputDir.'/'.$filename;
 
         if (!\is_dir($outputDir)) {
             \mkdir($outputDir, 0777, true);
@@ -74,14 +74,17 @@ final readonly class BindUtilsCacheWarmer implements CacheWarmerInterface
     }
 
     /**
-     * Simplified version of BindUtils::getIntersectedProperties() for cache warming
+     * Simplified version of BindUtils::getIntersectedProperties() for cache warming.
      *
-     * @return array<string, array{0: array, 1: array}>
+     * @param class-string $targetClassName
+     * @param class-string $sourceClassName
+     *
+     * @return array<string, array{0: array{class: class-string, name: string}, 1: array{class: class-string, name: string}}>
      */
     private function computeIntersection(
         ReflectionService $reflectionService,
         string $targetClassName,
-        string $sourceClassName
+        string $sourceClassName,
     ): array {
         $targetProperties = $reflectionService->getReflectionProperties($targetClassName);
         $sourceProperties = $reflectionService->getReflectionProperties($sourceClassName);
@@ -95,7 +98,7 @@ final readonly class BindUtilsCacheWarmer implements CacheWarmerInterface
             $targetType = $targetProperty->getType();
             $sourceType = $sourceProperty->getType();
 
-            if ($targetType === null || $sourceType === null) {
+            if (null === $targetType || null === $sourceType) {
                 continue;
             }
 
@@ -104,9 +107,13 @@ final readonly class BindUtilsCacheWarmer implements CacheWarmerInterface
             }
 
             // Store serialized reflection data
+            /** @var class-string $targetClass */
+            $targetClass = $targetProperty->getDeclaringClass()->getName();
+            /** @var class-string $sourceClass */
+            $sourceClass = $sourceProperty->getDeclaringClass()->getName();
             $intersection[$propertyName] = [
-                ['class' => $targetProperty->getDeclaringClass()->getName(), 'name' => $propertyName],
-                ['class' => $sourceProperty->getDeclaringClass()->getName(), 'name' => $propertyName],
+                ['class' => $targetClass, 'name' => $propertyName],
+                ['class' => $sourceClass, 'name' => $propertyName],
             ];
         }
 
@@ -114,7 +121,7 @@ final readonly class BindUtilsCacheWarmer implements CacheWarmerInterface
     }
 
     /**
-     * Copied from BindUtils for cache warming
+     * Copied from BindUtils for cache warming.
      */
     private function isReflectionTypeValidForInitialization(\ReflectionType $targetType, \ReflectionType $sourceType): bool
     {
@@ -125,18 +132,19 @@ final readonly class BindUtilsCacheWarmer implements CacheWarmerInterface
         $sourceTypes = $sourceType instanceof \ReflectionUnionType ? $sourceType->getTypes() : [$sourceType];
 
         if ($targetType->isBuiltin()) {
-            foreach ($sourceTypes as $sourceType) {
-                if ($sourceType->isBuiltin()) {
+            foreach ($sourceTypes as $st) {
+                if ($st instanceof \ReflectionNamedType && $st->isBuiltin()) {
                     return true;
                 }
             }
+
             return false;
         }
 
         // For View classes, we can't check ViewInterface/BindView/IterableView here
         // since we're in cache warming context, so allow all non-builtin matches
-        foreach ($sourceTypes as $sourceType) {
-            if (\is_a($targetType->getName(), $sourceType->getName(), true)) {
+        foreach ($sourceTypes as $st) {
+            if ($st instanceof \ReflectionNamedType && \is_a($targetType->getName(), $st->getName(), true)) {
                 return true;
             }
         }

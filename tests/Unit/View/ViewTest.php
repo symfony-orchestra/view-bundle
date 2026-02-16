@@ -4,9 +4,9 @@ declare(strict_types=1);
 
 namespace Tests\Unit\View;
 
-use PHPUnit\Framework\TestCase;
 use ChamberOrchestra\ViewBundle\View\View;
 use ChamberOrchestra\ViewBundle\View\ViewInterface;
+use PHPUnit\Framework\TestCase;
 
 final class ViewTest extends TestCase
 {

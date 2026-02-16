@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace Tests\Unit\PropertyAccessor;
 
-use PHPUnit\Framework\TestCase;
 use ChamberOrchestra\ViewBundle\PropertyAccessor\ReflectionService;
+use PHPUnit\Framework\TestCase;
 
 final class ReflectionServiceTest extends TestCase
 {

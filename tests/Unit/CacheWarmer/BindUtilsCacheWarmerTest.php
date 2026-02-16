@@ -4,9 +4,9 @@ declare(strict_types=1);
 
 namespace Tests\Unit\CacheWarmer;
 
-use PHPUnit\Framework\TestCase;
 use ChamberOrchestra\ViewBundle\CacheWarmer\BindUtilsCacheWarmer;
 use ChamberOrchestra\ViewBundle\View\BindView;
+use PHPUnit\Framework\TestCase;
 
 final class BindUtilsCacheWarmerTest extends TestCase
 {
@@ -14,14 +14,14 @@ final class BindUtilsCacheWarmerTest extends TestCase
 
     protected function setUp(): void
     {
-        $this->cacheDir = \sys_get_temp_dir() . '/view_bundle_test_' . \uniqid();
+        $this->cacheDir = \sys_get_temp_dir().'/view_bundle_test_'.\uniqid();
         \mkdir($this->cacheDir, 0777, true);
     }
 
     protected function tearDown(): void
     {
         if (\is_dir($this->cacheDir)) {
-            \array_map('unlink', \glob($this->cacheDir . '/*'));
+            \array_map('unlink', \glob($this->cacheDir.'/*'));
             \rmdir($this->cacheDir);
         }
     }
@@ -34,7 +34,7 @@ final class BindUtilsCacheWarmerTest extends TestCase
 
     public function testWarmUpGeneratesCacheFile(): void
     {
-        $testView = new class((object)[]) extends BindView {
+        $testView = new class((object) []) extends BindView {
             public string $name = '';
             public int $age = 0;
         };
@@ -45,18 +45,18 @@ final class BindUtilsCacheWarmerTest extends TestCase
         $files = $warmer->warmUp($this->cacheDir);
 
         self::assertCount(1, $files);
-        self::assertSame($this->cacheDir . '/bind_utils_mappings_test-build.php', $files[0]);
+        self::assertSame($this->cacheDir.'/bind_utils_mappings_test-build.php', $files[0]);
         self::assertFileExists($files[0]);
     }
 
     public function testGeneratedCacheContainsPropertyMappings(): void
     {
-        $testView1 = new class((object)[]) extends BindView {
+        $testView1 = new class((object) []) extends BindView {
             public string $name = '';
             public int $id = 0;
         };
 
-        $testView2 = new class((object)[]) extends BindView {
+        $testView2 = new class((object) []) extends BindView {
             public string $name = '';
             public string $email = '';
         };
@@ -70,7 +70,7 @@ final class BindUtilsCacheWarmerTest extends TestCase
         self::assertIsArray($cached);
 
         // Should have mappings for View1->View2
-        $key = $testView1::class . '@' . $testView2::class;
+        $key = $testView1::class.'@'.$testView2::class;
         self::assertArrayHasKey($key, $cached);
 
         $mapping = $cached[$key];
@@ -101,15 +101,15 @@ final class BindUtilsCacheWarmerTest extends TestCase
 
     public function testPrecomputesAllViewToViewCombinations(): void
     {
-        $view1 = new class((object)[]) extends BindView {
+        $view1 = new class((object) []) extends BindView {
             public string $shared = '';
         };
 
-        $view2 = new class((object)[]) extends BindView {
+        $view2 = new class((object) []) extends BindView {
             public string $shared = '';
         };
 
-        $view3 = new class((object)[]) extends BindView {
+        $view3 = new class((object) []) extends BindView {
             public string $shared = '';
         };
 
@@ -125,7 +125,7 @@ final class BindUtilsCacheWarmerTest extends TestCase
         // Check all combinations exist
         foreach ($viewClasses as $target) {
             foreach ($viewClasses as $source) {
-                $key = $target . '@' . $source;
+                $key = $target.'@'.$source;
                 self::assertArrayHasKey($key, $cached, "Missing mapping for $key");
             }
         }

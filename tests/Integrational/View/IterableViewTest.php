@@ -4,16 +4,16 @@ declare(strict_types=1);
 
 namespace Tests\Integrational\View;
 
-use Symfony\Bundle\FrameworkBundle\Test\KernelTestCase;
-use Symfony\Component\Serializer\SerializerInterface;
 use ChamberOrchestra\ViewBundle\View\IterableView;
 use ChamberOrchestra\ViewBundle\View\View;
+use Symfony\Bundle\FrameworkBundle\Test\KernelTestCase;
+use Symfony\Component\Serializer\SerializerInterface;
 
 final class IterableViewTest extends KernelTestCase
 {
     public function testSerializesMappedEntries(): void
     {
-        $items = [(object)['id' => 1], (object)['id' => 2]];
+        $items = [(object) ['id' => 1], (object) ['id' => 2]];
         $view = new IterableView($items, DummyChildView::class);
 
         static::bootKernel();
@@ -26,7 +26,6 @@ final class IterableViewTest extends KernelTestCase
             ['id' => 2],
         ], $result);
     }
-
 }
 
 final class DummyChildView extends View

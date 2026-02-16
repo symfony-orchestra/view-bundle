@@ -11,10 +11,10 @@ declare(strict_types=1);
 
 namespace ChamberOrchestra\ViewBundle\EventSubscriber;
 
+use ChamberOrchestra\ViewBundle\Utils\BindUtils;
 use Symfony\Component\DependencyInjection\Attribute\Autowire;
 use Symfony\Component\EventDispatcher\Attribute\AsEventListener;
 use Symfony\Component\HttpKernel\Event\RequestEvent;
-use ChamberOrchestra\ViewBundle\Utils\BindUtils;
 
 #[AsEventListener(RequestEvent::class, priority: 256)]
 readonly class SetVersionSubscriber
@@ -27,8 +27,7 @@ readonly class SetVersionSubscriber
         private bool $debug = false,
         #[Autowire('%kernel.share_dir%')]
         private ?string $shareDir = null,
-    )
-    {
+    ) {
     }
 
     public function __invoke(): void

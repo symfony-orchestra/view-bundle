@@ -4,12 +4,12 @@ declare(strict_types=1);
 
 namespace Tests\Unit\Utils;
 
-use PHPUnit\Framework\TestCase;
 use ChamberOrchestra\ViewBundle\Attribute\Type;
 use ChamberOrchestra\ViewBundle\PropertyAccessor\ReflectionService;
 use ChamberOrchestra\ViewBundle\Utils\BindUtils;
 use ChamberOrchestra\ViewBundle\View\BindView;
 use ChamberOrchestra\ViewBundle\View\IterableView;
+use PHPUnit\Framework\TestCase;
 
 final class BindUtilsTest extends TestCase
 {
@@ -145,12 +145,12 @@ final class BindUtilsTest extends TestCase
     private function resetStaticState(): void
     {
         foreach ([
-                     'configured' => false,
-                     'cacheNamespace' => 'bind_view',
-                     'cacheLifetime' => 0,
-                     'version' => '',
-                     'storage' => [],
-                 ] as $prop => $value) {
+            'configured' => false,
+            'cacheNamespace' => 'bind_view',
+            'cacheLifetime' => 0,
+            'version' => '',
+            'storage' => [],
+        ] as $prop => $value) {
             new \ReflectionProperty(BindUtils::class, $prop)->setValue(null, $value);
         }
 

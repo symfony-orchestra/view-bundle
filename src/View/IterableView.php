@@ -16,6 +16,9 @@ use Symfony\Component\Serializer\Normalizer\NormalizerInterface;
 
 class IterableView extends View implements NormalizableInterface
 {
+    /**
+     * @param iterable<mixed> $entries
+     */
     public function __construct(public iterable $entries = [], callable|string|null $map = null)
     {
         if (\is_string($map)) {
@@ -27,20 +30,28 @@ class IterableView extends View implements NormalizableInterface
                 throw new \RuntimeException(\sprintf('Mapping class %s must implement ViewInterface', $map));
             }
 
-            $map = static fn(object $v) => new $map($v);
+            $map = static fn (object $v) => new $map($v);
         }
 
         $entriesArray = \is_array($entries) ? $entries : \iterator_to_array($entries);
         $this->entries = \array_values(\array_map($map ?? [static::class, 'map'], $entriesArray));
     }
 
+    /**
+     * @param array<mixed>|object $value
+     */
     protected static function map(array|object $value): ViewInterface
     {
         $valueType = \is_object($value) ? \get_class($value) : \gettype($value);
         throw new \RuntimeException(\sprintf('%s should be defined or mapping closure should be passed for value of type %s', __METHOD__, $valueType));
     }
 
-    public function normalize(NormalizerInterface $normalizer, ?string $format = null, array $context = []): array|string|int|float|bool
+    /**
+     * @param array<string, mixed> $context
+     *
+     * @return array<mixed>|string|int|float|bool|\ArrayObject<int|string, mixed>|null
+     */
+    public function normalize(NormalizerInterface $normalizer, ?string $format = null, array $context = []): array|string|int|float|bool|\ArrayObject|null
     {
         return $normalizer->normalize($this->entries);
     }

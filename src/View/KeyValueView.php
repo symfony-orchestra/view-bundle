@@ -16,13 +16,20 @@ use Symfony\Component\Serializer\Normalizer\NormalizerInterface;
 
 class KeyValueView extends View implements NormalizableInterface
 {
+    /**
+     * @param array<mixed> $view
+     */
     public function __construct(
         private readonly string $key,
         private readonly array $view,
-    )
-    {
+    ) {
     }
 
+    /**
+     * @param array<string, mixed> $context
+     *
+     * @return array<string, mixed>
+     */
     public function normalize(NormalizerInterface $normalizer, ?string $format = null, array $context = []): array
     {
         return [$this->key => $normalizer->normalize($this->view, $format, $context)];

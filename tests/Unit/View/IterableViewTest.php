@@ -4,23 +4,23 @@ declare(strict_types=1);
 
 namespace Tests\Unit\View;
 
-use PHPUnit\Framework\TestCase;
-use Symfony\Component\Serializer\Normalizer\NormalizerInterface;
 use ChamberOrchestra\ViewBundle\View\IterableView;
 use ChamberOrchestra\ViewBundle\View\View;
+use PHPUnit\Framework\TestCase;
+use Symfony\Component\Serializer\Normalizer\NormalizerInterface;
 
 final class IterableViewTest extends TestCase
 {
     public function testItMapsEntriesWithCallable(): void
     {
-        $view = new IterableView([1, 2], static fn(int $value) => $value * 10);
+        $view = new IterableView([1, 2], static fn (int $value) => $value * 10);
 
         self::assertSame([10, 20], $view->entries);
     }
 
     public function testItMapsEntriesWithClassString(): void
     {
-        $items = [(object)['id' => 1], (object)['id' => 2]];
+        $items = [(object) ['id' => 1], (object) ['id' => 2]];
         $view = new IterableView($items, DummyChildView::class);
 
         self::assertCount(2, $view->entries);
@@ -54,7 +54,7 @@ final class IterableViewTest extends TestCase
 
     public function testNormalizeDelegatesEntries(): void
     {
-        $view = new IterableView([1, 2], static fn(int $v) => $v + 1);
+        $view = new IterableView([1, 2], static fn (int $v) => $v + 1);
 
         $normalizer = $this->createMock(NormalizerInterface::class);
         $normalizer

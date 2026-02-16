@@ -4,16 +4,13 @@ declare(strict_types=1);
 
 namespace Tests\Integrational\EventSubscriber;
 
+use ChamberOrchestra\ViewBundle\EventSubscriber\ViewSubscriber;
+use ChamberOrchestra\ViewBundle\View\View;
 use Symfony\Bundle\FrameworkBundle\Test\KernelTestCase;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpKernel\Event\ViewEvent;
 use Symfony\Component\HttpKernel\HttpKernelInterface;
 use Symfony\Component\Serializer\SerializerInterface;
-use ChamberOrchestra\ViewBundle\EventSubscriber\ViewSubscriber;
-use ChamberOrchestra\ViewBundle\View\ResponseView;
-use ChamberOrchestra\ViewBundle\View\View;
-use ChamberOrchestra\ViewBundle\View\ViewInterface;
-use Tests\Integrational\TestKernel;
 
 final class ViewSubscriberTest extends KernelTestCase
 {

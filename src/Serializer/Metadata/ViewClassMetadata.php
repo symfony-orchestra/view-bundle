@@ -14,7 +14,7 @@ namespace ChamberOrchestra\ViewBundle\Serializer\Metadata;
 final readonly class ViewClassMetadata
 {
     /**
-     * @param class-string $className
+     * @param class-string                $className
      * @param array<ViewPropertyMetadata> $properties
      */
     public function __construct(

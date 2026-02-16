@@ -11,9 +11,9 @@ declare(strict_types=1);
 
 namespace ChamberOrchestra\ViewBundle\CacheWarmer;
 
+use ChamberOrchestra\ViewBundle\Serializer\Metadata\ViewMetadataFactory;
 use Symfony\Component\HttpKernel\CacheWarmer\CacheWarmerInterface;
 use Symfony\Component\VarExporter\VarExporter;
-use ChamberOrchestra\ViewBundle\Serializer\Metadata\ViewMetadataFactory;
 
 final readonly class ViewMetadataCacheWarmer implements CacheWarmerInterface
 {
@@ -60,10 +60,10 @@ final readonly class ViewMetadataCacheWarmer implements CacheWarmerInterface
         }
 
         // Generate optimized PHP file in the share directory, versioned by build ID
-        $outputDir = $this->shareDir !== '' ? $this->shareDir : $cacheDir;
-        $filename = $this->buildId !== '' ? "view_metadata_{$this->buildId}.php" : 'view_metadata.php';
-        $code = "<?php\n\nreturn " . VarExporter::export($metadata) . ";\n";
-        $path = $outputDir . '/' . $filename;
+        $outputDir = '' !== $this->shareDir ? $this->shareDir : $cacheDir;
+        $filename = '' !== $this->buildId ? "view_metadata_{$this->buildId}.php" : 'view_metadata.php';
+        $code = "<?php\n\nreturn ".VarExporter::export($metadata).";\n";
+        $path = $outputDir.'/'.$filename;
 
         if (!\is_dir($outputDir)) {
             \mkdir($outputDir, 0777, true);

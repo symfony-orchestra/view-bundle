@@ -41,7 +41,9 @@
   },
   "require-dev": {
   "phpunit/phpunit": "^13.0",
-    "symfony/test-pack": "^1.2"
+    "symfony/test-pack": "^1.2",
+    "phpstan/phpstan": "^2.1",
+    "friendsofphp/php-cs-fixer": "^3.94"
   },
   "autoload": {
     "psr-4": {
@@ -69,6 +71,9 @@
     }
   },
   "scripts": {
-    "test": "vendor/bin/phpunit"
+    "test": "vendor/bin/phpunit",
+    "analyse": "vendor/bin/phpstan analyse",
+    "cs-check": "vendor/bin/php-cs-fixer fix --dry-run --diff",
+    "cs-fix": "vendor/bin/php-cs-fixer fix"
   }
 }

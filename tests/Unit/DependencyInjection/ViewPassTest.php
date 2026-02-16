@@ -4,11 +4,11 @@ declare(strict_types=1);
 
 namespace Tests\Unit\DependencyInjection;
 
+use ChamberOrchestra\ViewBundle\DependencyInjection\ViewPass;
 use PHPUnit\Framework\TestCase;
 use Symfony\Component\DependencyInjection\ContainerBuilder;
 use Symfony\Component\DependencyInjection\Definition;
 use Symfony\Component\DependencyInjection\Exception\InvalidArgumentException;
-use ChamberOrchestra\ViewBundle\DependencyInjection\ViewPass;
 
 final class ViewPassTest extends TestCase
 {

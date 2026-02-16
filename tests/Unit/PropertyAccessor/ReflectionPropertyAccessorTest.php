@@ -1,4 +1,5 @@
 <?php
+
 declare(strict_types=1);
 
 /*
@@ -10,13 +11,13 @@ declare(strict_types=1);
 
 namespace Tests\Unit\PropertyAccessor;
 
+use ChamberOrchestra\ViewBundle\PropertyAccessor\ReflectionPropertyAccessor;
+use ChamberOrchestra\ViewBundle\PropertyAccessor\ReflectionService;
 use Doctrine\Persistence\Proxy;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
 use Symfony\Component\PropertyAccess\Exception\NoSuchPropertyException;
 use Symfony\Component\PropertyAccess\PropertyAccessorInterface;
-use ChamberOrchestra\ViewBundle\PropertyAccessor\ReflectionPropertyAccessor;
-use ChamberOrchestra\ViewBundle\PropertyAccessor\ReflectionService;
 
 class ReflectionPropertyAccessorTest extends TestCase
 {
@@ -31,7 +32,7 @@ class ReflectionPropertyAccessorTest extends TestCase
             return $proxy;
         };
         if (\is_string($objectOrArray)) {
-            $objectOrArray = $proxy((bool)\str_replace('__proxy__', '', $objectOrArray));
+            $objectOrArray = $proxy((bool) \str_replace('__proxy__', '', $objectOrArray));
         }
 
         $accessor = $this->createMock(PropertyAccessorInterface::class);
@@ -78,7 +79,7 @@ class ReflectionPropertyAccessorTest extends TestCase
             return $proxy;
         };
         if (\is_string($objectOrArray)) {
-            $objectOrArray = $proxy((bool)\str_replace('__proxy__', '', $objectOrArray));
+            $objectOrArray = $proxy((bool) \str_replace('__proxy__', '', $objectOrArray));
         }
 
         $accessor = $this->createMock(PropertyAccessorInterface::class);
@@ -151,10 +152,10 @@ class ReflectionPropertyAccessorTest extends TestCase
         $accessor->expects(self::once())->method('getValue')->willThrowException($exception);
 
         $property = $this->createMock(\ReflectionProperty::class);
-        $property->expects(self::exactly((int)!$throw))->method('getValue');
+        $property->expects(self::exactly((int) !$throw))->method('getValue');
 
         $reflectionService = $this->createMock(ReflectionService::class);
-        $reflectionService->expects(self::exactly((int)!$throw))->method('getReflectionProperty')->willReturn($property);
+        $reflectionService->expects(self::exactly((int) !$throw))->method('getReflectionProperty')->willReturn($property);
 
         if ($throw) {
             $this->expectExceptionObject($exception);

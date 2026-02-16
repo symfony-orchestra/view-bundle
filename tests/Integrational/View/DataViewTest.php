@@ -4,10 +4,10 @@ declare(strict_types=1);
 
 namespace Tests\Integrational\View;
 
-use Symfony\Bundle\FrameworkBundle\Test\KernelTestCase;
-use Symfony\Component\Serializer\SerializerInterface;
 use ChamberOrchestra\ViewBundle\View\DataView;
 use ChamberOrchestra\ViewBundle\View\View;
+use Symfony\Bundle\FrameworkBundle\Test\KernelTestCase;
+use Symfony\Component\Serializer\SerializerInterface;
 
 final class DataViewTest extends KernelTestCase
 {

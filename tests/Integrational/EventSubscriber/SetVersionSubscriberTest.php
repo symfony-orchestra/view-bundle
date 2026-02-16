@@ -4,10 +4,10 @@ declare(strict_types=1);
 
 namespace Tests\Integrational\EventSubscriber;
 
-use Symfony\Bundle\FrameworkBundle\Test\KernelTestCase;
 use ChamberOrchestra\ViewBundle\EventSubscriber\SetVersionSubscriber;
 use ChamberOrchestra\ViewBundle\PropertyAccessor\ReflectionService;
 use ChamberOrchestra\ViewBundle\Utils\BindUtils;
+use Symfony\Bundle\FrameworkBundle\Test\KernelTestCase;
 
 final class SetVersionSubscriberTest extends KernelTestCase
 {
@@ -48,12 +48,12 @@ final class SetVersionSubscriberTest extends KernelTestCase
     private function resetBindUtils(): void
     {
         foreach ([
-                     'configured' => false,
-                     'cacheNamespace' => 'bind_view',
-                     'cacheLifetime' => 0,
-                     'version' => '',
-                     'storage' => [],
-                 ] as $property => $value) {
+            'configured' => false,
+            'cacheNamespace' => 'bind_view',
+            'cacheLifetime' => 0,
+            'version' => '',
+            'storage' => [],
+        ] as $property => $value) {
             new \ReflectionProperty(BindUtils::class, $property)->setValue(null, $value);
         }
 

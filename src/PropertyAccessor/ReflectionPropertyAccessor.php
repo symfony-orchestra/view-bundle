@@ -24,6 +24,11 @@ readonly class ReflectionPropertyAccessor implements PropertyAccessorInterface
     ) {
     }
 
+    /**
+     * @param object|array<mixed> $objectOrArray
+     *
+     * @param-out object|array<mixed> $objectOrArray
+     */
     public function setValue(object|array &$objectOrArray, string|PropertyPathInterface $propertyPath, mixed $value): void
     {
         if ($objectOrArray instanceof Proxy && !$objectOrArray->__isInitialized()) {
@@ -34,6 +39,8 @@ readonly class ReflectionPropertyAccessor implements PropertyAccessorInterface
     }
 
     /**
+     * @param object|array<mixed> $objectOrArray
+     *
      * @throws \ReflectionException
      */
     public function getValue(object|array $objectOrArray, string|PropertyPathInterface $propertyPath): mixed
@@ -48,14 +55,19 @@ readonly class ReflectionPropertyAccessor implements PropertyAccessorInterface
             if (!$this->isIntercepted($e, $objectOrArray, $propertyPath)) {
                 throw $e;
             }
-            if (null === $property = $this->getReflectionProperty($objectOrArray, $propertyPath)) {
+            if (null === $property = $this->getReflectionProperty($objectOrArray, (string) $propertyPath)) {
                 throw $e;
             }
+
+            \assert(\is_object($objectOrArray));
+
             return $property->getValue($objectOrArray);
         }
     }
 
     /**
+     * @param object|iterable<mixed> $objectOrArray
+     *
      * @throws \ReflectionException
      */
     public function isWritable(object|iterable $objectOrArray, string|PropertyPathInterface $propertyPath): bool
@@ -64,6 +76,8 @@ readonly class ReflectionPropertyAccessor implements PropertyAccessorInterface
     }
 
     /**
+     * @param object|iterable<mixed> $objectOrArray
+     *
      * @throws \ReflectionException
      */
     public function isReadable(object|iterable $objectOrArray, string|PropertyPathInterface $propertyPath): bool
@@ -72,7 +86,9 @@ readonly class ReflectionPropertyAccessor implements PropertyAccessorInterface
     }
 
     /**
-     * Is the property accessible as public of getter method
+     * Is the property accessible as public of getter method.
+     *
+     * @param object|iterable<mixed> $objectOrArray
      */
     public function isStrictlyReadable(object|iterable $objectOrArray, string|PropertyPathInterface $propertyPath): bool
     {
@@ -80,14 +96,18 @@ readonly class ReflectionPropertyAccessor implements PropertyAccessorInterface
     }
 
     /**
+     * @param object|iterable<mixed> $objectOrArray
+     *
      * @throws \ReflectionException
      */
     private function propertyExists(object|iterable $objectOrArray, string|PropertyPathInterface $propertyPath): bool
     {
-        return null !== $this->getReflectionProperty($objectOrArray, (string)$propertyPath);
+        return null !== $this->getReflectionProperty($objectOrArray, (string) $propertyPath);
     }
 
     /**
+     * @param object|iterable<mixed> $objectOrArray
+     *
      * @throws \ReflectionException
      */
     private function getReflectionProperty(object|iterable $objectOrArray, string $propertyPath): ?\ReflectionProperty
@@ -99,6 +119,9 @@ readonly class ReflectionPropertyAccessor implements PropertyAccessorInterface
         return $this->reflectionService->getReflectionProperty($objectOrArray, $propertyPath);
     }
 
+    /**
+     * @param object|array<mixed> $objectOrArray
+     */
     private function isIntercepted(\Throwable $e, object|array $objectOrArray, string|PropertyPathInterface $propertyPath): bool
     {
         if ($e instanceof NoSuchPropertyException) {
@@ -111,6 +134,6 @@ readonly class ReflectionPropertyAccessor implements PropertyAccessorInterface
             '/^Can\'t get a way to read the property "'.$propertyPath.'" in class '.\preg_quote($objectType, '/').'$/',
         ];
 
-        return \array_any($interceptablePatterns, fn($pattern) => \preg_match($pattern, $e->getMessage()));
+        return \array_any($interceptablePatterns, fn (string $pattern): bool => (bool) \preg_match($pattern, $e->getMessage()));
     }
 }

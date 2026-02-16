@@ -1,4 +1,5 @@
 <?php
+
 declare(strict_types=1);
 
 /*
@@ -10,10 +11,10 @@ declare(strict_types=1);
 
 namespace Tests\Integrational\PropertyAccessor;
 
-use Symfony\Bundle\FrameworkBundle\Test\KernelTestCase;
-use Symfony\Component\PropertyAccess\PropertyAccessorInterface;
 use ChamberOrchestra\ViewBundle\PropertyAccessor\ReflectionPropertyAccessor;
 use ChamberOrchestra\ViewBundle\PropertyAccessor\ReflectionService;
+use Symfony\Bundle\FrameworkBundle\Test\KernelTestCase;
+use Symfony\Component\PropertyAccess\PropertyAccessorInterface;
 
 class ReflectionPropertyAccessorTest extends KernelTestCase
 {

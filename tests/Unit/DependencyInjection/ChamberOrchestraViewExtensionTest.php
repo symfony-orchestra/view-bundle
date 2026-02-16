@@ -11,11 +11,11 @@ declare(strict_types=1);
 
 namespace Tests\Unit\DependencyInjection;
 
+use ChamberOrchestra\ViewBundle\DependencyInjection\ChamberOrchestraViewExtension;
+use ChamberOrchestra\ViewBundle\EventSubscriber\SetVersionSubscriber;
 use PHPUnit\Framework\TestCase;
 use Symfony\Component\DependencyInjection\ContainerBuilder;
 use Symfony\Component\DependencyInjection\Parameter;
-use ChamberOrchestra\ViewBundle\DependencyInjection\ChamberOrchestraViewExtension;
-use ChamberOrchestra\ViewBundle\EventSubscriber\SetVersionSubscriber;
 
 final class ChamberOrchestraViewExtensionTest extends TestCase
 {

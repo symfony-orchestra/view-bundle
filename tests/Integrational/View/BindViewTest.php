@@ -4,11 +4,11 @@ declare(strict_types=1);
 
 namespace Tests\Integrational\View;
 
-use Symfony\Bundle\FrameworkBundle\Test\KernelTestCase;
-use Symfony\Component\Serializer\SerializerInterface;
 use ChamberOrchestra\ViewBundle\PropertyAccessor\ReflectionService;
 use ChamberOrchestra\ViewBundle\Utils\BindUtils;
 use ChamberOrchestra\ViewBundle\View\BindView;
+use Symfony\Bundle\FrameworkBundle\Test\KernelTestCase;
+use Symfony\Component\Serializer\SerializerInterface;
 
 final class BindViewTest extends KernelTestCase
 {
@@ -46,12 +46,12 @@ final class BindViewTest extends KernelTestCase
     private function resetStaticState(): void
     {
         foreach ([
-                     'configured' => false,
-                     'cacheNamespace' => 'bind_view',
-                     'cacheLifetime' => 0,
-                     'version' => '',
-                     'storage' => [],
-                 ] as $prop => $value) {
+            'configured' => false,
+            'cacheNamespace' => 'bind_view',
+            'cacheLifetime' => 0,
+            'version' => '',
+            'storage' => [],
+        ] as $prop => $value) {
             new \ReflectionProperty(BindUtils::class, $prop)->setValue(null, $value);
         }
 
