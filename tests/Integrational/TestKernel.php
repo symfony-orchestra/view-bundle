@@ -4,11 +4,11 @@ declare(strict_types=1);
 
 namespace Tests\Integrational;
 
+use ChamberOrchestra\ViewBundle\ChamberOrchestraViewBundle;
 use Symfony\Bundle\FrameworkBundle\FrameworkBundle;
 use Symfony\Bundle\FrameworkBundle\Kernel\MicroKernelTrait;
 use Symfony\Component\DependencyInjection\Loader\Configurator\ContainerConfigurator;
 use Symfony\Component\HttpKernel\Kernel;
-use ChamberOrchestra\ViewBundle\ChamberOrchestraViewBundle;
 
 final class TestKernel extends Kernel
 {

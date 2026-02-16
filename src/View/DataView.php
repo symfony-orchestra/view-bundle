@@ -16,6 +16,10 @@ use Symfony\Component\Serializer\Normalizer\NormalizerInterface;
 
 class DataView extends ResponseView
 {
+    /**
+     * @param ViewInterface|array<mixed> $data
+     * @param array<string, mixed>       $headers
+     */
     public function __construct(
         public readonly ViewInterface|array $data,
         int $status = Response::HTTP_OK,
@@ -24,7 +28,12 @@ class DataView extends ResponseView
         parent::__construct($status, $headers);
     }
 
-    public function normalize(NormalizerInterface $normalizer, ?string $format = null, array $context = []): array|string|int|float|bool
+    /**
+     * @param array<string, mixed> $context
+     *
+     * @return array<mixed>|string|int|float|bool|\ArrayObject<int|string, mixed>|null
+     */
+    public function normalize(NormalizerInterface $normalizer, ?string $format = null, array $context = []): array|string|int|float|bool|\ArrayObject|null
     {
         return $normalizer->normalize(['data' => $this->data], $format, $context);
     }

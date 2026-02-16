@@ -15,5 +15,8 @@ interface ResponseViewInterface
 {
     public function getStatus(): int;
 
+    /**
+     * @return array<string, mixed>
+     */
     public function getHeaders(): array;
 }

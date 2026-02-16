@@ -16,20 +16,26 @@ use Doctrine\Common\Util\ClassUtils;
 class ReflectionService
 {
     private const MAX_CACHE_SIZE = 512;
+
+    /** @var array<string, array<string, \ReflectionProperty>> */
     private static array $storage = [];
 
     /**
+     * @param \ReflectionClass<object>|class-string $class
+     *
+     * @return array<string, \ReflectionProperty>
+     *
      * @throws \ReflectionException
      */
     public function getReflectionProperties(\ReflectionClass|string $class): array
     {
         $className = $class instanceof \ReflectionClass ? $class->getName() : $class;
-        if (isset(static::$storage[$className])) {
-            return static::$storage[$className];
+        if (isset(self::$storage[$className])) {
+            return self::$storage[$className];
         }
 
         $cache = [];
-        $class = $class instanceof \ReflectionClass ? $class : new \ReflectionClass($class);
+        $class = $class instanceof \ReflectionClass ? $class : new \ReflectionClass($className);
         foreach ($class->getProperties() as $p) {
             $cache[$p->getName()] = $p;
         }
@@ -38,18 +44,21 @@ class ReflectionService
             $cache = \array_merge($cache, $this->getReflectionProperties($parent));
         }
 
-        if (\count(static::$storage) >= self::MAX_CACHE_SIZE) {
-            unset(static::$storage[\array_key_first(static::$storage)]);
+        if (\count(self::$storage) >= self::MAX_CACHE_SIZE) {
+            unset(self::$storage[\array_key_first(self::$storage)]);
         }
 
-        return static::$storage[$className] = $cache;
+        return self::$storage[$className] = $cache;
     }
 
     /**
      * @throws \ReflectionException
      */
-    public function getReflectionProperty(string|object $class, string $propertyPath): \ReflectionProperty|null
+    public function getReflectionProperty(string|object $class, string $propertyPath): ?\ReflectionProperty
     {
-        return $this->getReflectionProperties(\is_object($class) ? ClassUtils::getClass($class) : $class)[$propertyPath] ?? null;
+        /** @var class-string $className */
+        $className = \is_object($class) ? ClassUtils::getClass($class) : $class;
+
+        return $this->getReflectionProperties($className)[$propertyPath] ?? null;
     }
 }

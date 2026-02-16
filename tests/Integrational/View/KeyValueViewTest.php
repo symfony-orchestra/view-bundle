@@ -4,9 +4,9 @@ declare(strict_types=1);
 
 namespace Tests\Integrational\View;
 
+use ChamberOrchestra\ViewBundle\View\KeyValueView;
 use Symfony\Bundle\FrameworkBundle\Test\KernelTestCase;
 use Symfony\Component\Serializer\SerializerInterface;
-use ChamberOrchestra\ViewBundle\View\KeyValueView;
 
 final class KeyValueViewTest extends KernelTestCase
 {

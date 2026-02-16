@@ -4,12 +4,12 @@ declare(strict_types=1);
 
 namespace Tests\Unit\Serializer\Normalizer;
 
-use PHPUnit\Framework\TestCase;
-use Symfony\Component\Serializer\Normalizer\NormalizerInterface;
 use ChamberOrchestra\ViewBundle\Serializer\Metadata\ViewMetadataFactory;
 use ChamberOrchestra\ViewBundle\Serializer\Normalizer\ViewNormalizer;
 use ChamberOrchestra\ViewBundle\View\View;
 use ChamberOrchestra\ViewBundle\View\ViewInterface;
+use PHPUnit\Framework\TestCase;
+use Symfony\Component\Serializer\Normalizer\NormalizerInterface;
 
 final class ViewNormalizerTest extends TestCase
 {
@@ -34,7 +34,7 @@ final class ViewNormalizerTest extends TestCase
 
             public function __construct()
             {
-                $this->baz = (object)['nested' => 'thing'];
+                $this->baz = (object) ['nested' => 'thing'];
             }
         };
 
@@ -51,6 +51,7 @@ final class ViewNormalizerTest extends TestCase
                 }
 
                 self::assertSame($view->baz, $value);
+
                 return ['nested' => 'normalized'];
             });
 

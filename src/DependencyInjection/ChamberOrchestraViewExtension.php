@@ -11,19 +11,19 @@ declare(strict_types=1);
 
 namespace ChamberOrchestra\ViewBundle\DependencyInjection;
 
+use ChamberOrchestra\ViewBundle\EventSubscriber\SetVersionSubscriber;
+use ChamberOrchestra\ViewBundle\Serializer\Metadata\ViewMetadataFactory;
 use Symfony\Component\Config\FileLocator;
 use Symfony\Component\DependencyInjection\ContainerBuilder;
 use Symfony\Component\DependencyInjection\Extension\Extension;
 use Symfony\Component\DependencyInjection\Loader\PhpFileLoader;
 use Symfony\Component\DependencyInjection\Parameter;
-use ChamberOrchestra\ViewBundle\EventSubscriber\SetVersionSubscriber;
-use ChamberOrchestra\ViewBundle\Serializer\Metadata\ViewMetadataFactory;
 
 class ChamberOrchestraViewExtension extends Extension
 {
     public function load(array $configs, ContainerBuilder $container): void
     {
-        new PhpFileLoader($container, new FileLocator(__DIR__ . '/../Resources/config'))->load('services.php');
+        new PhpFileLoader($container, new FileLocator(__DIR__.'/../Resources/config'))->load('services.php');
         $this->registerViewCache($container);
     }
 

@@ -4,9 +4,9 @@ declare(strict_types=1);
 
 namespace Tests\Unit\EventSubscriber;
 
-use PHPUnit\Framework\TestCase;
 use ChamberOrchestra\ViewBundle\EventSubscriber\SetVersionSubscriber;
 use ChamberOrchestra\ViewBundle\Utils\BindUtils;
+use PHPUnit\Framework\TestCase;
 
 final class SetVersionSubscriberTest extends TestCase
 {
@@ -50,12 +50,12 @@ final class SetVersionSubscriberTest extends TestCase
     private function resetBindUtils(): void
     {
         foreach ([
-                     'configured' => false,
-                     'cacheNamespace' => 'bind_view',
-                     'cacheLifetime' => 0,
-                     'version' => '',
-                     'storage' => [],
-                 ] as $property => $value) {
+            'configured' => false,
+            'cacheNamespace' => 'bind_view',
+            'cacheLifetime' => 0,
+            'version' => '',
+            'storage' => [],
+        ] as $property => $value) {
             $ref = new \ReflectionProperty(BindUtils::class, $property);
             $ref->setValue(null, $value);
         }

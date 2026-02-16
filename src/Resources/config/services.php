@@ -2,11 +2,11 @@
 
 declare(strict_types=1);
 
-use Symfony\Component\DependencyInjection\Loader\Configurator\ContainerConfigurator;
-use Symfony\Component\Serializer\Normalizer\CustomNormalizer;
 use ChamberOrchestra\ViewBundle\CacheWarmer\BindUtilsCacheWarmer;
 use ChamberOrchestra\ViewBundle\CacheWarmer\ViewMetadataCacheWarmer;
 use ChamberOrchestra\ViewBundle\Serializer\Normalizer\ViewNormalizer;
+use Symfony\Component\DependencyInjection\Loader\Configurator\ContainerConfigurator;
+use Symfony\Component\Serializer\Normalizer\CustomNormalizer;
 
 return static function (ContainerConfigurator $container): void {
     $services = $container->services();
@@ -14,8 +14,7 @@ return static function (ContainerConfigurator $container): void {
     $services
         ->defaults()
         ->autowire()
-        ->autoconfigure()
-        ->public(false);
+        ->autoconfigure();
 
     $services->set(CustomNormalizer::class);
     $services->set(ViewNormalizer::class);
@@ -57,5 +56,4 @@ return static function (ContainerConfigurator $container): void {
         ->tag('container.excluded')
         ->autowire(false)
         ->autoconfigure(true); // Applies #[AutoconfigureTag] from ViewInterface
-
 };

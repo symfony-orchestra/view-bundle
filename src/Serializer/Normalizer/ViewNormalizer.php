@@ -11,11 +11,11 @@ declare(strict_types=1);
 
 namespace ChamberOrchestra\ViewBundle\Serializer\Normalizer;
 
+use ChamberOrchestra\ViewBundle\Serializer\Metadata\ViewMetadataFactory;
+use ChamberOrchestra\ViewBundle\View\ViewInterface;
 use Symfony\Component\Serializer\Normalizer\NormalizerAwareInterface;
 use Symfony\Component\Serializer\Normalizer\NormalizerAwareTrait;
 use Symfony\Component\Serializer\Normalizer\NormalizerInterface;
-use ChamberOrchestra\ViewBundle\Serializer\Metadata\ViewMetadataFactory;
-use ChamberOrchestra\ViewBundle\View\ViewInterface;
 
 class ViewNormalizer implements NormalizerInterface, NormalizerAwareInterface
 {
@@ -26,8 +26,14 @@ class ViewNormalizer implements NormalizerInterface, NormalizerAwareInterface
     ) {
     }
 
+    /**
+     * @param array<string, mixed> $context
+     *
+     * @return array<string, mixed>|string|int|float|bool|\ArrayObject<string, mixed>|null
+     */
     public function normalize(mixed $data, ?string $format = null, array $context = []): array|string|int|float|bool|\ArrayObject|null
     {
+        \assert($data instanceof ViewInterface);
         $metadata = $this->metadataFactory->getMetadata($data::class);
         $collection = [];
 
@@ -35,7 +41,7 @@ class ViewNormalizer implements NormalizerInterface, NormalizerAwareInterface
             $value = $data->{$property->name};
 
             // Skip null values efficiently (no reflection needed)
-            if ($value === null) {
+            if (null === $value) {
                 continue;
             }
 
@@ -45,11 +51,14 @@ class ViewNormalizer implements NormalizerInterface, NormalizerAwareInterface
         return $collection;
     }
 
-    public function getSupportedTypes(string|null $format): array
+    public function getSupportedTypes(?string $format): array
     {
         return [ViewInterface::class => true];
     }
 
+    /**
+     * @param array<string, mixed> $context
+     */
     public function supportsNormalization(mixed $data, ?string $format = null, array $context = []): bool
     {
         return $data instanceof ViewInterface;

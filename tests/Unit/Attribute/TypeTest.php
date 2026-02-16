@@ -11,9 +11,9 @@ declare(strict_types=1);
 
 namespace Tests\Unit\Attribute;
 
-use PHPUnit\Framework\TestCase;
 use ChamberOrchestra\ViewBundle\Attribute\Type;
 use ChamberOrchestra\ViewBundle\View\ViewInterface;
+use PHPUnit\Framework\TestCase;
 
 final class TypeTest extends TestCase
 {

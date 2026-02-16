@@ -4,9 +4,9 @@ declare(strict_types=1);
 
 namespace Tests\Unit\View;
 
+use ChamberOrchestra\ViewBundle\View\KeyValueView;
 use PHPUnit\Framework\TestCase;
 use Symfony\Component\Serializer\Normalizer\NormalizerInterface;
-use ChamberOrchestra\ViewBundle\View\KeyValueView;
 
 final class KeyValueViewTest extends TestCase
 {

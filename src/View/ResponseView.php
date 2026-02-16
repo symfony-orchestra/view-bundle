@@ -17,6 +17,9 @@ use Symfony\Component\Serializer\Normalizer\NormalizerInterface;
 
 class ResponseView extends View implements NormalizableInterface, ResponseViewInterface
 {
+    /**
+     * @param array<string, mixed> $headers
+     */
     public function __construct(
         protected readonly int $status = Response::HTTP_OK,
         protected readonly array $headers = ['Content-Type' => 'application/json'],
@@ -28,12 +31,20 @@ class ResponseView extends View implements NormalizableInterface, ResponseViewIn
         return $this->status;
     }
 
+    /**
+     * @return array<string, mixed>
+     */
     public function getHeaders(): array
     {
         return $this->headers;
     }
 
-    public function normalize(NormalizerInterface $normalizer, ?string $format = null, array $context = []): array|string|int|float|bool
+    /**
+     * @param array<string, mixed> $context
+     *
+     * @return array<mixed>|string|int|float|bool|\ArrayObject<int|string, mixed>|null
+     */
+    public function normalize(NormalizerInterface $normalizer, ?string $format = null, array $context = []): array|string|int|float|bool|\ArrayObject|null
     {
         return $normalizer->normalize([], $format, $context);
     }

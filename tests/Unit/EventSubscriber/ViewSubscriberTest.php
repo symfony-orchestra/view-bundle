@@ -4,16 +4,16 @@ declare(strict_types=1);
 
 namespace Tests\Unit\EventSubscriber;
 
+use ChamberOrchestra\ViewBundle\EventSubscriber\ViewSubscriber;
+use ChamberOrchestra\ViewBundle\View\DataView;
+use ChamberOrchestra\ViewBundle\View\ResponseView;
+use ChamberOrchestra\ViewBundle\View\View;
 use PHPUnit\Framework\TestCase;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\HttpKernel\Event\ViewEvent;
 use Symfony\Component\HttpKernel\HttpKernelInterface;
 use Symfony\Component\Serializer\SerializerInterface;
-use ChamberOrchestra\ViewBundle\EventSubscriber\ViewSubscriber;
-use ChamberOrchestra\ViewBundle\View\DataView;
-use ChamberOrchestra\ViewBundle\View\ResponseView;
-use ChamberOrchestra\ViewBundle\View\View;
 
 final class ViewSubscriberTest extends TestCase
 {
@@ -118,5 +118,4 @@ final class ViewSubscriberTest extends TestCase
             }
         };
     }
-
 }

@@ -4,10 +4,10 @@ declare(strict_types=1);
 
 namespace Tests\Unit\View;
 
-use PHPUnit\Framework\TestCase;
+use ChamberOrchestra\ViewBundle\PropertyAccessor\ReflectionService;
 use ChamberOrchestra\ViewBundle\Utils\BindUtils;
 use ChamberOrchestra\ViewBundle\View\BindView;
-use ChamberOrchestra\ViewBundle\PropertyAccessor\ReflectionService;
+use PHPUnit\Framework\TestCase;
 
 final class BindViewTest extends TestCase
 {

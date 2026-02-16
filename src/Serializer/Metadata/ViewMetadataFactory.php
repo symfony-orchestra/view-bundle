@@ -21,7 +21,7 @@ final class ViewMetadataFactory
     private array $cache = [];
 
     /**
-     * @var array<class-string, array>|null
+     * @var array<class-string, array{className: class-string, properties: list<array{name: string, nullable: bool, hasDefaultValue: bool}>}>|null
      */
     private static ?array $warmedCache = null;
 
@@ -32,7 +32,7 @@ final class ViewMetadataFactory
         ?string $shareDir = null,
         ?string $buildId = null,
     ) {
-        $this->warmCachePath = $shareDir && $buildId ? $shareDir . "/view_metadata_{$buildId}.php" : null;
+        $this->warmCachePath = $shareDir && $buildId ? $shareDir."/view_metadata_{$buildId}.php" : null;
     }
 
     /**
@@ -80,13 +80,15 @@ final class ViewMetadataFactory
      */
     private function loadFromWarmedCache(string $className): ?ViewClassMetadata
     {
-        if ($this->warmCachePath === null || !\file_exists($this->warmCachePath)) {
+        if (null === $this->warmCachePath || !\file_exists($this->warmCachePath)) {
             return null;
         }
 
         // Load warmed cache file once
-        if (self::$warmedCache === null) {
-            self::$warmedCache = require $this->warmCachePath;
+        if (null === self::$warmedCache) {
+            /** @var array<class-string, array{className: class-string, properties: list<array{name: string, nullable: bool, hasDefaultValue: bool}>}> $loaded */
+            $loaded = require $this->warmCachePath;
+            self::$warmedCache = $loaded;
         }
 
         if (!isset(self::$warmedCache[$className])) {

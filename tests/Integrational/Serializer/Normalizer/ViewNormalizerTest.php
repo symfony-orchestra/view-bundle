@@ -22,7 +22,7 @@ final class ViewNormalizerTest extends KernelTestCase
 
             public function __construct()
             {
-                $this->child = (object)['id' => 10, 'optional' => null];
+                $this->child = (object) ['id' => 10, 'optional' => null];
             }
         };
 

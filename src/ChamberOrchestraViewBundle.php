@@ -11,9 +11,9 @@ declare(strict_types=1);
 
 namespace ChamberOrchestra\ViewBundle;
 
+use ChamberOrchestra\ViewBundle\DependencyInjection\ViewPass;
 use Symfony\Component\DependencyInjection\ContainerBuilder;
 use Symfony\Component\HttpKernel\Bundle\Bundle;
-use ChamberOrchestra\ViewBundle\DependencyInjection\ViewPass;
 
 class ChamberOrchestraViewBundle extends Bundle
 {

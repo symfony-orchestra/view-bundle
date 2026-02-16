@@ -4,10 +4,10 @@ declare(strict_types=1);
 
 namespace Tests\Unit\CacheWarmer;
 
-use PHPUnit\Framework\TestCase;
 use ChamberOrchestra\ViewBundle\CacheWarmer\ViewMetadataCacheWarmer;
 use ChamberOrchestra\ViewBundle\Serializer\Metadata\ViewMetadataFactory;
 use ChamberOrchestra\ViewBundle\View\View;
+use PHPUnit\Framework\TestCase;
 
 final class ViewMetadataCacheWarmerTest extends TestCase
 {
@@ -15,14 +15,14 @@ final class ViewMetadataCacheWarmerTest extends TestCase
 
     protected function setUp(): void
     {
-        $this->cacheDir = \sys_get_temp_dir() . '/view_bundle_test_' . \uniqid();
+        $this->cacheDir = \sys_get_temp_dir().'/view_bundle_test_'.\uniqid();
         \mkdir($this->cacheDir, 0777, true);
     }
 
     protected function tearDown(): void
     {
         if (\is_dir($this->cacheDir)) {
-            \array_map('unlink', \glob($this->cacheDir . '/*'));
+            \array_map('unlink', \glob($this->cacheDir.'/*'));
             \rmdir($this->cacheDir);
         }
     }
@@ -47,7 +47,7 @@ final class ViewMetadataCacheWarmerTest extends TestCase
         $files = $warmer->warmUp($this->cacheDir);
 
         self::assertCount(1, $files);
-        self::assertSame($this->cacheDir . '/view_metadata_test-build.php', $files[0]);
+        self::assertSame($this->cacheDir.'/view_metadata_test-build.php', $files[0]);
         self::assertFileExists($files[0]);
     }
 
@@ -85,9 +85,9 @@ final class ViewMetadataCacheWarmerTest extends TestCase
 
         // Check nullable flags
         foreach ($properties as $prop) {
-            if ($prop['name'] === 'optional') {
+            if ('optional' === $prop['name']) {
                 self::assertTrue($prop['nullable']);
-            } elseif ($prop['name'] === 'name' || $prop['name'] === 'count') {
+            } elseif ('name' === $prop['name'] || 'count' === $prop['name']) {
                 self::assertFalse($prop['nullable']);
             }
         }
