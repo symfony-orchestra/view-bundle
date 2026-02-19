@@ -12,10 +12,14 @@ ChamberOrchestra View Bundle is a Symfony 8.0 bundle that provides a typed, reus
 
 ```bash
 composer install                        # Install dependencies
-./bin/phpunit                           # Run all tests (unit + integration)
-./bin/phpunit --filter ClassName        # Run a specific test class
-./bin/phpunit --filter testMethodName   # Run a specific test method
-composer test                           # Alias for ./bin/phpunit
+vendor/bin/phpunit                      # Run all tests (unit + integration)
+vendor/bin/phpunit --filter ClassName   # Run a specific test class
+vendor/bin/phpunit --filter testMethodName # Run a specific test method
+composer test                           # Alias for vendor/bin/phpunit
+composer analyse                        # Run PHPStan static analysis
+composer cs-check                       # Check code style (dry-run)
+composer cs-fix                         # Fix code style
+composer bench                          # Run PHPBench benchmarks
 php -l path/to/File.php                 # Quick syntax check
 ```
 
@@ -23,19 +27,20 @@ php -l path/to/File.php                 # Quick syntax check
 
 ### View Hierarchy
 
-The core abstraction is `ViewInterface` (marker interface). Views compose into JSON responses:
+The core abstraction is `ViewInterface` (marker interface). `ResponseViewInterface` defines `getStatus()` and `getHeaders()` for views that control HTTP response details. Views compose into JSON responses:
 
-- **ResponseView** — base with status code (200) and JSON headers; implements `NormalizableInterface`
-- **DataView** — wraps any `ViewInterface` or array under a `"data"` key
+- **View** — abstract base class implementing `ViewInterface`; convenience superclass for custom views
+- **ResponseView** — base with status code (200) and JSON headers; implements `ResponseViewInterface` and `NormalizableInterface`
+- **DataView** — wraps any `ViewInterface` or array under a `"data"` key; implements `ResponseViewInterface`
 - **BindView** — extends `stdClass`; maps matching properties from a source domain object using reflection via `BindUtils::sync()`. The `#[Type(ViewClass::class)]` attribute on `IterableView` properties specifies element view classes
 - **IterableView** — maps collections via callback or view class string
 - **KeyValueView** — produces associative array output for metadata blocks
 
 ### Request/Response Flow
 
-1. **SetVersionSubscriber** (priority 256, early) — on `RequestEvent`, configures `BindUtils` with `container.build_id` and enables property accessor caching when `APP_DEBUG=false` (24h lifetime)
+1. **SetVersionSubscriber** (priority 256, early) — on `RequestEvent`, configures `BindUtils` with build ID, cache lifetime, and `shareDir` for warm cache loading. Caching enabled when `APP_DEBUG=false` (24h lifetime)
 2. Controller returns a `ViewInterface` object
-3. **ViewSubscriber** — on `ViewEvent`, detects `ViewInterface` results, wraps non-ResponseView in `DataView`, serializes to JSON, and sets status/headers
+3. **ViewSubscriber** — on `ViewEvent`, detects `ViewInterface` results, wraps non-`ResponseViewInterface` in `DataView`, serializes to JSON, and sets status/headers
 
 ### Property Binding (BindUtils)
 
@@ -48,9 +53,21 @@ The core abstraction is `ViewInterface` (marker interface). Views compose into J
 
 `ReflectionPropertyAccessor` decorates Symfony's PropertyAccessor and initializes Doctrine proxy objects before accessing their properties.
 
-### Serializer
+### Serializer & Metadata
 
-`ViewNormalizer` handles `ViewInterface` instances, strips null values from output, and delegates nested normalization.
+`ViewNormalizer` handles `ViewInterface` instances, strips null values from output, and delegates nested normalization. It uses `ViewMetadataFactory` to introspect view classes.
+
+- **ViewMetadataFactory** — builds `ViewClassMetadata` for view classes; supports warm cache loading from pre-exported PHP files
+- **ViewClassMetadata** / **ViewPropertyMetadata** — value objects describing view class structure (property names, nullability, default values)
+
+### Cache Warming
+
+Two cache warmers pre-compute reflection data at deploy time, writing exported PHP files to `kernel.share_dir`:
+
+- **BindUtilsCacheWarmer** — pre-computes view-to-view property intersection mappings for `BindUtils`
+- **ViewMetadataCacheWarmer** — pre-computes serialization metadata for `ViewNormalizer`
+
+**ViewPass** (compiler pass) collects classes tagged `chamber_orchestra.view` and passes them to both cache warmers.
 
 ## Code Conventions
 
@@ -66,7 +83,7 @@ The core abstraction is `ViewInterface` (marker interface). Views compose into J
 
 ## Testing
 
-- PHPUnit 12.x; tests in `tests/` autoloaded as `Tests\`
+- PHPUnit 13.x; tests in `tests/` autoloaded as `Tests\`
 - **Unit tests** (`tests/Unit/`) extend `TestCase`; mirror source structure
 - **Integration tests** (`tests/Integrational/`) extend `KernelTestCase`; use `Tests\Integrational\TestKernel` (minimal kernel with FrameworkBundle + ChamberOrchestraViewBundle)
 - Tests reset `BindUtils` and `ReflectionService` static state between runs
