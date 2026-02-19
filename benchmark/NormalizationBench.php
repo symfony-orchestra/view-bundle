@@ -7,6 +7,8 @@ namespace Benchmark;
 use ChamberOrchestra\ViewBundle\Serializer\Metadata\ViewMetadataFactory;
 use ChamberOrchestra\ViewBundle\Serializer\Normalizer\ViewNormalizer;
 use ChamberOrchestra\ViewBundle\View\View;
+use PhpBench\Attributes as Bench;
+use Symfony\Component\Serializer\Encoder\JsonEncoder;
 use Symfony\Component\Serializer\Normalizer\DateTimeNormalizer;
 use Symfony\Component\Serializer\Normalizer\ObjectNormalizer;
 use Symfony\Component\Serializer\Serializer;
@@ -21,13 +23,11 @@ class NormalizationBench
     {
         $viewNormalizer = new ViewNormalizer(new ViewMetadataFactory());
 
-        $this->serializer = new Serializer([
-            $viewNormalizer,
-            new DateTimeNormalizer(),
-            new ObjectNormalizer(),
-        ]);
+        $this->serializer = new Serializer(
+            [$viewNormalizer, new DateTimeNormalizer(), new ObjectNormalizer()],
+            [new JsonEncoder()],
+        );
 
-        // Create test views
         $this->simpleView = new class extends View {
             public string $name = 'John Doe';
             public int $age = 30;
@@ -48,37 +48,37 @@ class NormalizationBench
         };
     }
 
-    /**
-     * @Revs(1000)
-     * @Iterations(5)
-     */
+    #[Bench\Revs(1000)]
+    #[Bench\Iterations(5)]
+    #[Bench\Warmup(5)]
+    #[Bench\Groups(['normalize'])]
     public function benchNormalizeSimpleView(): void
     {
         $this->serializer->normalize($this->simpleView, 'json');
     }
 
-    /**
-     * @Revs(1000)
-     * @Iterations(5)
-     */
+    #[Bench\Revs(1000)]
+    #[Bench\Iterations(5)]
+    #[Bench\Warmup(5)]
+    #[Bench\Groups(['normalize'])]
     public function benchNormalizeComplexView(): void
     {
         $this->serializer->normalize($this->complexView, 'json');
     }
 
-    /**
-     * @Revs(100)
-     * @Iterations(5)
-     */
+    #[Bench\Revs(1000)]
+    #[Bench\Iterations(5)]
+    #[Bench\Warmup(5)]
+    #[Bench\Groups(['serialize'])]
     public function benchSerializeSimpleView(): void
     {
         $this->serializer->serialize($this->simpleView, 'json');
     }
 
-    /**
-     * @Revs(100)
-     * @Iterations(5)
-     */
+    #[Bench\Revs(1000)]
+    #[Bench\Iterations(5)]
+    #[Bench\Warmup(5)]
+    #[Bench\Groups(['serialize'])]
     public function benchSerializeComplexView(): void
     {
         $this->serializer->serialize($this->complexView, 'json');
