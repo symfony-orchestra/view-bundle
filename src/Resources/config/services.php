@@ -2,6 +2,13 @@
 
 declare(strict_types=1);
 
+/*
+ * This file is part of the ChamberOrchestra package.
+ *
+ * For the full copyright and license information, please view the LICENSE
+ * file that was distributed with this source code.
+ */
+
 use ChamberOrchestra\ViewBundle\CacheWarmer\BindUtilsCacheWarmer;
 use ChamberOrchestra\ViewBundle\CacheWarmer\ViewMetadataCacheWarmer;
 use ChamberOrchestra\ViewBundle\Serializer\Normalizer\ViewNormalizer;
