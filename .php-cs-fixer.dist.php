@@ -1,5 +1,14 @@
 <?php
 
+declare(strict_types=1);
+
+/*
+ * This file is part of the ChamberOrchestra package.
+ *
+ * For the full copyright and license information, please view the LICENSE
+ * file that was distributed with this source code.
+ */
+
 $finder = (new PhpCsFixer\Finder())
     ->in(__DIR__.'/src')
     ->in(__DIR__.'/tests')
@@ -9,6 +18,14 @@ return (new PhpCsFixer\Config())
     ->setRules([
         '@PER-CS' => true,
         '@Symfony' => true,
+        'header_comment' => [
+            'header' => <<<'EOF'
+                This file is part of the ChamberOrchestra package.
+
+                For the full copyright and license information, please view the LICENSE
+                file that was distributed with this source code.
+                EOF,
+        ],
         'declare_strict_types' => true,
         'strict_param' => true,
         'array_syntax' => ['syntax' => 'short'],
@@ -29,4 +46,4 @@ return (new PhpCsFixer\Config())
     ])
     ->setFinder($finder)
     ->setRiskyAllowed(true)
-;
+    ;
