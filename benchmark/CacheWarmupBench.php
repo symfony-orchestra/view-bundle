@@ -7,7 +7,6 @@ namespace Benchmark;
 use ChamberOrchestra\ViewBundle\CacheWarmer\BindUtilsCacheWarmer;
 use ChamberOrchestra\ViewBundle\CacheWarmer\ViewMetadataCacheWarmer;
 use ChamberOrchestra\ViewBundle\Serializer\Metadata\ViewMetadataFactory;
-use ChamberOrchestra\ViewBundle\Utils\BindUtils;
 use ChamberOrchestra\ViewBundle\View\BindView;
 use ChamberOrchestra\ViewBundle\View\View;
 use PhpBench\Attributes as Bench;
@@ -23,7 +22,7 @@ class CacheWarmupBench
 
     public function __construct()
     {
-        BindUtils::configure('bench-build-id', 0, 'bench');
+        BindView::setBindUtils(null);
 
         $simpleView = new class extends View {
             public string $name = 'Test';

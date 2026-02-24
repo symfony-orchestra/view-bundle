@@ -12,10 +12,12 @@ class BindUtilsBench
 {
     private object $source;
     private string $viewClass;
+    private BindUtils $bindUtils;
 
     public function __construct()
     {
-        BindUtils::configure('bench-build-id', 0, 'bench');
+        $this->bindUtils = new BindUtils('bench-build-id');
+        BindView::setBindUtils($this->bindUtils);
 
         $this->source = new class {
             public string $name = 'John Doe';
@@ -54,6 +56,6 @@ class BindUtilsBench
         $target->age = null;
         $target->email = null;
 
-        BindUtils::instance()->sync($target, $this->source);
+        $this->bindUtils->sync($target, $this->source);
     }
 }

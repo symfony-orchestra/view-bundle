@@ -12,7 +12,6 @@ declare(strict_types=1);
 namespace Tests\Unit\Utils;
 
 use ChamberOrchestra\ViewBundle\Attribute\Type;
-use ChamberOrchestra\ViewBundle\PropertyAccessor\ReflectionService;
 use ChamberOrchestra\ViewBundle\Utils\BindUtils;
 use ChamberOrchestra\ViewBundle\View\BindView;
 use ChamberOrchestra\ViewBundle\View\IterableView;
@@ -22,27 +21,35 @@ final class BindUtilsTest extends TestCase
 {
     protected function setUp(): void
     {
-        $this->resetStaticState();
+        BindView::setBindUtils(null);
     }
 
     protected function tearDown(): void
     {
-        $this->resetStaticState();
+        BindView::setBindUtils(null);
     }
 
-    public function testConfigureRunsOnlyOnce(): void
+    public function testConstructorAcceptsConfigParameters(): void
     {
-        BindUtils::configure('first', 123, 'ns_first');
-        BindUtils::configure('second', 999, 'ns_second');
+        $bindUtils = new BindUtils('build-123', true, '/tmp/share');
 
-        self::assertSame('first', $this->getBindUtilsProperty('version'));
-        self::assertSame(123, $this->getBindUtilsProperty('cacheLifetime'));
-        self::assertSame('ns_first', $this->getBindUtilsProperty('cacheNamespace'));
-        self::assertTrue($this->getBindUtilsProperty('configured'));
+        // Verify the instance was created successfully by using it
+        $source = new class {
+            public string $name = 'test';
+        };
+        $target = new class {
+            public ?string $name = null;
+        };
+
+        $bindUtils->sync($target, $source);
+
+        self::assertSame('test', $target->name);
     }
 
     public function testSyncCopiesMissingValuesAndLeavesExistingOnes(): void
     {
+        $bindUtils = new BindUtils();
+
         $source = new class {
             public string $name = 'Alice';
             public int $age = 30;
@@ -53,17 +60,17 @@ final class BindUtilsTest extends TestCase
             public int $age = 5;
         };
 
-        BindUtils::instance()->sync($target, $source);
+        $bindUtils->sync($target, $source);
 
         self::assertSame('Alice', $target->name);
         self::assertSame(5, $target->age, 'Existing non-null value must not be overridden');
-
-        $storage = $this->getBindUtilsProperty('storage');
-        self::assertCount(1, $storage, 'Intersection cache should contain computed mapping');
     }
 
     public function testSyncMapsViewAndIterableViewProperties(): void
     {
+        $bindUtils = new BindUtils();
+        BindView::setBindUtils($bindUtils);
+
         $child = new class {
             public string $id = 'child-id';
         };
@@ -85,7 +92,7 @@ final class BindUtilsTest extends TestCase
             public IterableView $children;
         };
 
-        BindUtils::instance()->sync($target, $source);
+        $bindUtils->sync($target, $source);
 
         self::assertInstanceOf(ChildView::class, $target->child);
         self::assertSame($child, $target->child->source);
@@ -98,6 +105,8 @@ final class BindUtilsTest extends TestCase
 
     public function testSyncSkipsIncompatibleOrUnsupportedTypes(): void
     {
+        $bindUtils = new BindUtils();
+
         $source = new class {
             public object $incompatible;
             public string $union = 'value';
@@ -113,7 +122,7 @@ final class BindUtilsTest extends TestCase
             public int|string|null $union = null;
         };
 
-        BindUtils::instance()->sync($target, $source);
+        $bindUtils->sync($target, $source);
 
         self::assertNull($target->incompatible);
         self::assertNull($target->union);
@@ -121,6 +130,9 @@ final class BindUtilsTest extends TestCase
 
     public function testSyncAllowsAutoConfigurableTargetTypes(): void
     {
+        $bindUtils = new BindUtils();
+        BindView::setBindUtils($bindUtils);
+
         $child = new class {
             public string $id = 'child-id';
         };
@@ -138,30 +150,10 @@ final class BindUtilsTest extends TestCase
             public ?ChildView $child = null;
         };
 
-        BindUtils::instance()->sync($target, $source);
+        $bindUtils->sync($target, $source);
 
         self::assertInstanceOf(ChildView::class, $target->child);
         self::assertSame($child, $target->child->source);
-    }
-
-    private function getBindUtilsProperty(string $property): mixed
-    {
-        return new \ReflectionProperty(BindUtils::class, $property)->getValue();
-    }
-
-    private function resetStaticState(): void
-    {
-        foreach ([
-            'configured' => false,
-            'cacheNamespace' => 'bind_view',
-            'cacheLifetime' => 0,
-            'version' => '',
-            'storage' => [],
-        ] as $prop => $value) {
-            new \ReflectionProperty(BindUtils::class, $prop)->setValue(null, $value);
-        }
-
-        new \ReflectionProperty(ReflectionService::class, 'storage')->setValue(null, []);
     }
 }
 

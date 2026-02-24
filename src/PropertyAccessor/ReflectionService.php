@@ -18,7 +18,7 @@ class ReflectionService
     private const MAX_CACHE_SIZE = 512;
 
     /** @var array<string, array<string, \ReflectionProperty>> */
-    private static array $storage = [];
+    private array $storage = [];
 
     /**
      * @param \ReflectionClass<object>|class-string $class
@@ -30,8 +30,8 @@ class ReflectionService
     public function getReflectionProperties(\ReflectionClass|string $class): array
     {
         $className = $class instanceof \ReflectionClass ? $class->getName() : $class;
-        if (isset(self::$storage[$className])) {
-            return self::$storage[$className];
+        if (isset($this->storage[$className])) {
+            return $this->storage[$className];
         }
 
         $cache = [];
@@ -44,11 +44,11 @@ class ReflectionService
             $cache = \array_merge($cache, $this->getReflectionProperties($parent));
         }
 
-        if (\count(self::$storage) >= self::MAX_CACHE_SIZE) {
-            unset(self::$storage[\array_key_first(self::$storage)]);
+        if (\count($this->storage) >= self::MAX_CACHE_SIZE) {
+            unset($this->storage[\array_key_first($this->storage)]);
         }
 
-        return self::$storage[$className] = $cache;
+        return $this->storage[$className] = $cache;
     }
 
     /**

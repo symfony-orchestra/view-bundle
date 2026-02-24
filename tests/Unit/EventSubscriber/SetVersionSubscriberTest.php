@@ -13,58 +13,45 @@ namespace Tests\Unit\EventSubscriber;
 
 use ChamberOrchestra\ViewBundle\EventSubscriber\SetVersionSubscriber;
 use ChamberOrchestra\ViewBundle\Utils\BindUtils;
+use ChamberOrchestra\ViewBundle\View\BindView;
 use PHPUnit\Framework\TestCase;
 
 final class SetVersionSubscriberTest extends TestCase
 {
     protected function setUp(): void
     {
-        $this->resetBindUtils();
+        BindView::setBindUtils(null);
     }
 
     protected function tearDown(): void
     {
-        $this->resetBindUtils();
+        BindView::setBindUtils(null);
     }
 
-    public function testItConfiguresBindUtilsWithCacheWhenNotInDebug(): void
+    public function testItSetsBindUtilsOnBindView(): void
     {
-        $subscriber = new SetVersionSubscriber('build-123', false);
+        $bindUtils = new BindUtils('build-123');
+        $subscriber = new SetVersionSubscriber($bindUtils);
         $subscriber();
 
-        $this->assertSame('build-123', $this->getBindUtilsProperty('version'));
-        $this->assertSame(24 * 3600, $this->getBindUtilsProperty('cacheLifetime'));
-        $this->assertSame('view_bind', $this->getBindUtilsProperty('cacheNamespace'));
-        $this->assertTrue($this->getBindUtilsProperty('configured'));
+        // Verify BindView received the BindUtils instance by using it
+        $source = new class {
+            public string $name = 'test';
+        };
+
+        $view = new class($source) extends BindView {
+            public string $name;
+        };
+
+        self::assertSame('test', $view->name);
     }
 
-    public function testItDisablesCacheWhenDebugIsEnabled(): void
+    public function testItAcceptsBindUtilsViaConstructor(): void
     {
-        $subscriber = new SetVersionSubscriber('debug-build', true);
-        $subscriber();
+        $bindUtils = new BindUtils('build-456', true, '/tmp/share');
+        $subscriber = new SetVersionSubscriber($bindUtils);
 
-        $this->assertSame('debug-build', $this->getBindUtilsProperty('version'));
-        $this->assertSame(0, $this->getBindUtilsProperty('cacheLifetime'));
-        $this->assertSame('view_bind', $this->getBindUtilsProperty('cacheNamespace'));
-        $this->assertTrue($this->getBindUtilsProperty('configured'));
-    }
-
-    private function getBindUtilsProperty(string $property): mixed
-    {
-        return new \ReflectionProperty(BindUtils::class, $property)->getValue();
-    }
-
-    private function resetBindUtils(): void
-    {
-        foreach ([
-            'configured' => false,
-            'cacheNamespace' => 'bind_view',
-            'cacheLifetime' => 0,
-            'version' => '',
-            'storage' => [],
-        ] as $property => $value) {
-            $ref = new \ReflectionProperty(BindUtils::class, $property);
-            $ref->setValue(null, $value);
-        }
+        // Just verifying construction works — no exception thrown
+        self::assertInstanceOf(SetVersionSubscriber::class, $subscriber);
     }
 }

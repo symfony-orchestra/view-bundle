@@ -12,31 +12,20 @@ declare(strict_types=1);
 namespace ChamberOrchestra\ViewBundle\EventSubscriber;
 
 use ChamberOrchestra\ViewBundle\Utils\BindUtils;
-use Symfony\Component\DependencyInjection\Attribute\Autowire;
+use ChamberOrchestra\ViewBundle\View\BindView;
 use Symfony\Component\EventDispatcher\Attribute\AsEventListener;
 use Symfony\Component\HttpKernel\Event\RequestEvent;
 
 #[AsEventListener(RequestEvent::class, priority: 256)]
 readonly class SetVersionSubscriber
 {
-    private const int CACHE_LIFETIME_SECONDS = 86400; // 24 hours
-
     public function __construct(
-        private string $buildId = '',
-        #[Autowire('%env(bool:APP_DEBUG)%')]
-        private bool $debug = false,
-        #[Autowire('%kernel.share_dir%')]
-        private ?string $shareDir = null,
+        private BindUtils $bindUtils,
     ) {
     }
 
     public function __invoke(): void
     {
-        BindUtils::configure(
-            $this->buildId,
-            $this->debug ? 0 : self::CACHE_LIFETIME_SECONDS,
-            'view_bind',
-            $this->shareDir
-        );
+        BindView::setBindUtils($this->bindUtils);
     }
 }

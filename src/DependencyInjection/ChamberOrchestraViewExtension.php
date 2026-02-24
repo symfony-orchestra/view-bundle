@@ -11,8 +11,8 @@ declare(strict_types=1);
 
 namespace ChamberOrchestra\ViewBundle\DependencyInjection;
 
-use ChamberOrchestra\ViewBundle\EventSubscriber\SetVersionSubscriber;
 use ChamberOrchestra\ViewBundle\Serializer\Metadata\ViewMetadataFactory;
+use ChamberOrchestra\ViewBundle\Utils\BindUtils;
 use Symfony\Component\Config\FileLocator;
 use Symfony\Component\DependencyInjection\ContainerBuilder;
 use Symfony\Component\DependencyInjection\Extension\Extension;
@@ -31,7 +31,7 @@ class ChamberOrchestraViewExtension extends Extension
     {
         $buildId = new Parameter('container.build_id');
 
-        $container->getDefinition(SetVersionSubscriber::class)->setArgument('$buildId', $buildId);
+        $container->getDefinition(BindUtils::class)->setArgument('$buildId', $buildId);
         $container->getDefinition(ViewMetadataFactory::class)->setArgument('$buildId', $buildId);
         $container->getDefinition('chamber_orchestra.view_bundle.cache_warmer.view_metadata')->setArgument('$buildId', $buildId);
         $container->getDefinition('chamber_orchestra.view_bundle.cache_warmer.bind_utils')->setArgument('$buildId', $buildId);

@@ -27,32 +27,17 @@ final class CacheLoadingTest extends TestCase
     {
         $this->cacheDir = \sys_get_temp_dir().'/view_bundle_integration_'.\uniqid();
         \mkdir($this->cacheDir, 0777, true);
-
-        // Reset BindUtils static state
-        $reflection = new \ReflectionClass(BindUtils::class);
-        $configured = $reflection->getProperty('configured');
-        $configured->setValue(null, false);
-        $storage = $reflection->getProperty('storage');
-        $storage->setValue(null, []);
-        $warmedCache = $reflection->getProperty('warmedCache');
-        $warmedCache->setValue(null, null);
+        BindView::setBindUtils(null);
     }
 
     protected function tearDown(): void
     {
+        BindView::setBindUtils(null);
+
         if (\is_dir($this->cacheDir)) {
             \array_map('unlink', \glob($this->cacheDir.'/*'));
             \rmdir($this->cacheDir);
         }
-
-        // Reset BindUtils
-        $reflection = new \ReflectionClass(BindUtils::class);
-        $configured = $reflection->getProperty('configured');
-        $configured->setValue(null, false);
-        $storage = $reflection->getProperty('storage');
-        $storage->setValue(null, []);
-        $warmedCache = $reflection->getProperty('warmedCache');
-        $warmedCache->setValue(null, null);
     }
 
     public function testViewMetadataFactoryLoadsFromWarmedCache(): void
@@ -121,20 +106,21 @@ final class CacheLoadingTest extends TestCase
         self::assertArrayHasKey('name', $cached[$key]);
         self::assertArrayHasKey('id', $cached[$key]);
 
-        // Configure BindUtils with matching build ID and share dir
-        BindUtils::configure('test-build-id', 0, 'test', $this->cacheDir);
+        // Create BindUtils with matching build ID and share dir
+        $bindUtils = new BindUtils('test-build-id', false, $this->cacheDir);
+        BindView::setBindUtils($bindUtils);
 
-        // Verify warmed cache path includes build ID
+        // Verify warmed cache path includes build ID via reflection
         $reflection = new \ReflectionClass(BindUtils::class);
         $warmPathProp = $reflection->getProperty('warmCachePath');
-        $warmCachePath = $warmPathProp->getValue();
+        $warmCachePath = $warmPathProp->getValue($bindUtils);
         self::assertSame($this->cacheDir.'/bind_utils_mappings_test-build-id.php', $warmCachePath);
     }
 
     public function testBindUtilsFallsBackToReflectionWhenCacheMissing(): void
     {
-        // Configure BindUtils with empty cache dir (no warmed cache)
-        BindUtils::configure('test-build-id', 0, 'test', $this->cacheDir);
+        // Create BindUtils with empty cache dir (no warmed cache)
+        $bindUtils = new BindUtils('test-build-id', false, $this->cacheDir);
 
         // Verify no cache file exists
         self::assertFileDoesNotExist($this->cacheDir.'/bind_utils_mappings_test-build-id.php');
@@ -149,7 +135,7 @@ final class CacheLoadingTest extends TestCase
         };
 
         // Sync using BindUtils - should use reflection fallback
-        BindUtils::instance()->sync($target, $source);
+        $bindUtils->sync($target, $source);
 
         self::assertSame('test', $target->value);
     }
@@ -165,8 +151,9 @@ final class CacheLoadingTest extends TestCase
         $warmer = new BindUtilsCacheWarmer([$viewClass::class], '', 'test-build-id');
         $warmer->warmUp($this->cacheDir);
 
-        // Configure BindUtils with matching build ID
-        BindUtils::configure('test-build-id', 0, 'test', $this->cacheDir);
+        // Create BindUtils with matching build ID
+        $bindUtils = new BindUtils('test-build-id', false, $this->cacheDir);
+        BindView::setBindUtils($bindUtils);
 
         // Trigger cache loading by using BindUtils
         $source1 = new class {
@@ -175,12 +162,12 @@ final class CacheLoadingTest extends TestCase
         $target1 = new class {
             public ?string $shared = null;  // Nullable with null value
         };
-        BindUtils::instance()->sync($target1, $source1);
+        $bindUtils->sync($target1, $source1);
 
-        // Verify cache was loaded into static property
+        // Verify cache was loaded into instance property
         $reflection = new \ReflectionClass(BindUtils::class);
         $warmedCacheProp = $reflection->getProperty('warmedCache');
-        $warmedCache = $warmedCacheProp->getValue();
+        $warmedCache = $warmedCacheProp->getValue($bindUtils);
         self::assertNotNull($warmedCache, 'Warmed cache should be loaded');
 
         // Delete cache file
@@ -193,7 +180,7 @@ final class CacheLoadingTest extends TestCase
         $target2 = new class {
             public ?string $shared = null;  // Nullable with null value
         };
-        BindUtils::instance()->sync($target2, $source2);
+        $bindUtils->sync($target2, $source2);
 
         self::assertSame('second', $target2->shared);
     }
@@ -210,7 +197,6 @@ final class CacheLoadingTest extends TestCase
         };
 
         $buildId = 'abc123';
-        $viewClasses = [$testView::class, $bindView::class];
 
         // Warm metadata cache
         $metadataWarmer = new ViewMetadataCacheWarmer(new ViewMetadataFactory(), [$testView::class], '', $buildId);
@@ -275,9 +261,9 @@ final class CacheLoadingTest extends TestCase
         self::assertSame($testView::class, $metadataB->className);
 
         // Verify BindUtils with build A reads build A's file
-        BindUtils::configure($buildIdA, 0, 'test', $this->cacheDir);
+        $bindUtils = new BindUtils($buildIdA, false, $this->cacheDir);
         $reflection = new \ReflectionClass(BindUtils::class);
         $warmPathProp = $reflection->getProperty('warmCachePath');
-        self::assertSame($this->cacheDir."/bind_utils_mappings_{$buildIdA}.php", $warmPathProp->getValue());
+        self::assertSame($this->cacheDir."/bind_utils_mappings_{$buildIdA}.php", $warmPathProp->getValue($bindUtils));
     }
 }

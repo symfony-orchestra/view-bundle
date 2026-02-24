@@ -23,63 +23,32 @@ use Symfony\Component\PropertyInfo\Extractor\ReflectionExtractor;
 
 class BindUtils
 {
-    private static bool $configured = false;
-    private static string $cacheNamespace = 'bind_view';
-    private static int $cacheLifetime = 0;
-    private static string $version = '';
-    private static ?string $warmCachePath = null;
+    private const int CACHE_LIFETIME_SECONDS = 86400; // 24 hours
     private const int MAX_CACHE_SIZE = 1024;
 
+    private string $cacheNamespace;
+    private int $cacheLifetime;
+    private string $version;
+    private ?string $warmCachePath;
+
     /** @var array<string, array<string, array{0: \ReflectionProperty, 1: \ReflectionProperty}>> */
-    private static array $storage = [];
+    private array $storage = [];
 
     /** @var array<string, array<string, array{0: array{class: class-string, name: string}, 1: array{class: class-string, name: string}}>>|null */
-    private static ?array $warmedCache = null;
+    private ?array $warmedCache = null;
     private ReflectionService $reflectionService;
+    private ?ReflectionPropertyAccessor $accessor = null;
 
-    private function __construct()
-    {
+    public function __construct(
+        string $buildId = '',
+        bool $debug = false,
+        ?string $shareDir = null,
+    ) {
+        $this->version = $buildId;
+        $this->cacheLifetime = $debug ? 0 : self::CACHE_LIFETIME_SECONDS;
+        $this->cacheNamespace = 'view_bind';
+        $this->warmCachePath = $shareDir ? $shareDir."/bind_utils_mappings_{$buildId}.php" : null;
         $this->reflectionService = new ReflectionService();
-    }
-
-    /**
-     * Configures caching parameters. Called once at bootstrap via SetVersionSubscriber.
-     * Subsequent calls are ignored to ensure configuration consistency.
-     *
-     * @param string      $buildId       Unique build identifier for cache versioning (e.g., container.build_id)
-     * @param int         $cacheLifetime Cache lifetime in seconds (0 = disabled, used in debug mode)
-     * @param string      $namespace     Cache namespace prefix to prevent collisions
-     * @param string|null $shareDir      Optional share directory for loading warmed cache
-     *
-     * @throws \InvalidArgumentException If cacheLifetime is negative or namespace is empty
-     */
-    public static function configure(string $buildId, int $cacheLifetime = 3600, string $namespace = 'bind_view', ?string $shareDir = null): void
-    {
-        if (self::$configured) {
-            return;
-        }
-
-        if ($cacheLifetime < 0) {
-            throw new \InvalidArgumentException(\sprintf('Cache lifetime must be non-negative, got %d', $cacheLifetime));
-        }
-
-        if ('' === $namespace) {
-            throw new \InvalidArgumentException('Cache namespace cannot be empty');
-        }
-
-        self::$configured = true;
-        self::$version = $buildId;
-        self::$cacheLifetime = $cacheLifetime;
-        self::$cacheNamespace = $namespace;
-        self::$warmCachePath = $shareDir ? $shareDir."/bind_utils_mappings_{$buildId}.php" : null;
-    }
-
-    public static function instance(): self
-    {
-        /** @var self|null $instance */
-        static $instance;
-
-        return $instance ??= new self();
     }
 
     /**
@@ -111,6 +80,50 @@ class BindUtils
         }
     }
 
+    public static function isReflectionTypeValidForInitialization(\ReflectionType $targetType, \ReflectionType $sourceType): bool
+    {
+        if (!$targetType instanceof \ReflectionNamedType) {
+            // union types are not supported for binding
+            return false;
+        }
+
+        $sourceTypes = $sourceType instanceof \ReflectionUnionType ? $sourceType->getTypes() : [$sourceType];
+
+        if ($targetType->isBuiltin()) {
+            // pass all built in values, in case if one of the source values is built in either
+            foreach ($sourceTypes as $st) {
+                if ($st instanceof \ReflectionNamedType && $st->isBuiltin()) {
+                    return true;
+                }
+            }
+
+            return false;
+        }
+
+        if (self::isAutoConfigurableType($targetType)) {
+            return true;
+        }
+
+        foreach ($sourceTypes as $st) {
+            // all custom objects are valid only if the types are valid
+            if ($st instanceof \ReflectionNamedType && \is_a($targetType->getName(), $st->getName(), true)) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    public static function isView(\ReflectionType $type): bool
+    {
+        return $type instanceof \ReflectionNamedType && \is_a($type->getName(), ViewInterface::class, true);
+    }
+
+    public static function isAutoConfigurableType(\ReflectionNamedType $type): bool
+    {
+        return \array_any([BindView::class, IterableView::class], fn ($class) => \is_a($type->getName(), $class, true));
+    }
+
     private function getValue(\ReflectionProperty $targetProperty, \ReflectionProperty $sourceProperty, object $source): mixed
     {
         if (null === $value = $this->getAccessor()->getValue($source, $sourceProperty->getName())) {
@@ -119,7 +132,7 @@ class BindUtils
 
         $type = $targetProperty->getType();
 
-        if (null !== $type && $this->isView($type)) {
+        if (null !== $type && self::isView($type)) {
             if (!$type instanceof \ReflectionNamedType) {
                 throw new \LogicException(\sprintf('Property %s::$%s has view type but is not a named type. Union/intersection types with ViewInterface are not supported.', $targetProperty->getDeclaringClass()->getName(), $targetProperty->getName()));
             }
@@ -169,17 +182,17 @@ class BindUtils
         $sourceClassName = ClassUtils::getClass($source);
         $cacheKey = $targetClassName.'@'.$sourceClassName;
 
-        // 1. Check runtime cache (existing)
-        if (isset(self::$storage[$cacheKey])) {
-            return self::$storage[$cacheKey];
+        // 1. Check runtime cache
+        if (isset($this->storage[$cacheKey])) {
+            return $this->storage[$cacheKey];
         }
 
-        // 2. Check warmed cache (NEW)
+        // 2. Check warmed cache
         if ($warmed = $this->loadFromWarmedCache($cacheKey)) {
-            return self::$storage[$cacheKey] = $warmed;
+            return $this->storage[$cacheKey] = $warmed;
         }
 
-        // 3. Fall back to reflection (existing)
+        // 3. Fall back to reflection
         $targetProperties = $this->reflectionService->getReflectionProperties($targetClassName);
         $sourceProperties = $this->reflectionService->getReflectionProperties($sourceClassName);
 
@@ -196,18 +209,18 @@ class BindUtils
                 continue;
             }
 
-            if (!$this->isReflectionTypeValidForInitialization($targetType, $sourceType)) {
+            if (!self::isReflectionTypeValidForInitialization($targetType, $sourceType)) {
                 continue;
             }
 
             $intersection[$propertyName] = [$targetProperty, $sourceProperty];
         }
 
-        if (\count(self::$storage) >= self::MAX_CACHE_SIZE) {
-            unset(self::$storage[\array_key_first(self::$storage)]);
+        if (\count($this->storage) >= self::MAX_CACHE_SIZE) {
+            unset($this->storage[\array_key_first($this->storage)]);
         }
 
-        return self::$storage[$cacheKey] = $intersection;
+        return $this->storage[$cacheKey] = $intersection;
     }
 
     /**
@@ -217,22 +230,22 @@ class BindUtils
      */
     private function loadFromWarmedCache(string $cacheKey): ?array
     {
-        if (null === self::$warmCachePath || !\file_exists(self::$warmCachePath)) {
+        if (null === $this->warmCachePath || !\file_exists($this->warmCachePath)) {
             return null;
         }
 
         // Load warmed cache file once
-        if (null === self::$warmedCache) {
+        if (null === $this->warmedCache) {
             /** @var array<string, array<string, array{0: array{class: class-string, name: string}, 1: array{class: class-string, name: string}}>> $loaded */
-            $loaded = require self::$warmCachePath;
-            self::$warmedCache = $loaded;
+            $loaded = require $this->warmCachePath;
+            $this->warmedCache = $loaded;
         }
 
-        if (!isset(self::$warmedCache[$cacheKey])) {
+        if (!isset($this->warmedCache[$cacheKey])) {
             return null;
         }
 
-        $cached = self::$warmedCache[$cacheKey];
+        $cached = $this->warmedCache[$cacheKey];
         $result = [];
 
         // Reconstruct ReflectionProperty objects from cached data
@@ -251,57 +264,10 @@ class BindUtils
         return $result;
     }
 
-    private function isReflectionTypeValidForInitialization(\ReflectionType $targetType, \ReflectionType $sourceType): bool
-    {
-        if (!$targetType instanceof \ReflectionNamedType) {
-            // union types are not supported for binding
-            return false;
-        }
-
-        $sourceTypes = $sourceType instanceof \ReflectionUnionType ? $sourceType->getTypes() : [$sourceType];
-
-        if ($targetType->isBuiltin()) {
-            // pass all built in values, in case if one of the source values is built in either
-            foreach ($sourceTypes as $st) {
-                if ($st instanceof \ReflectionNamedType && $st->isBuiltin()) {
-                    return true;
-                }
-            }
-
-            return false;
-        }
-
-        if ($this->isAutoConfigurableType($targetType)) {
-            return true;
-        }
-
-        foreach ($sourceTypes as $st) {
-            // all custom objects are valid only if the types are valid
-            if ($st instanceof \ReflectionNamedType && \is_a($targetType->getName(), $st->getName(), true)) {
-                return true;
-            }
-        }
-
-        return false;
-    }
-
-    private function isView(\ReflectionType $type): bool
-    {
-        return $type instanceof \ReflectionNamedType && \is_a($type->getName(), ViewInterface::class, true);
-    }
-
-    private function isAutoConfigurableType(\ReflectionNamedType $type): bool
-    {
-        return \array_any([BindView::class, IterableView::class], fn ($class) => \is_a($type->getName(), $class, true));
-    }
-
     private function getAccessor(): ReflectionPropertyAccessor
     {
-        /** @var ReflectionPropertyAccessor|null $accessor */
-        static $accessor;
-
-        if (null !== $accessor) {
-            return $accessor;
+        if (null !== $this->accessor) {
+            return $this->accessor;
         }
 
         $accessorPrefixes = ['get', 'is', 'has'];
@@ -327,8 +293,8 @@ class BindUtils
             ReflectionExtractor::DISALLOW_MAGIC_METHODS
         );
 
-        $cache = self::$configured
-            ? PropertyAccessor::createCache(self::$cacheNamespace, self::$cacheLifetime, self::$version)
+        $cache = '' !== $this->version
+            ? PropertyAccessor::createCache($this->cacheNamespace, $this->cacheLifetime, $this->version)
             : null;
 
         $propertyAccessor = new PropertyAccessor(
@@ -339,6 +305,6 @@ class BindUtils
             $writeExtractor
         );
 
-        return $accessor = new ReflectionPropertyAccessor($propertyAccessor, $this->reflectionService);
+        return $this->accessor = new ReflectionPropertyAccessor($propertyAccessor, $this->reflectionService);
     }
 }
