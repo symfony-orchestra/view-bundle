@@ -26,7 +26,7 @@ final class CacheLoadingTest extends TestCase
     protected function setUp(): void
     {
         $this->cacheDir = \sys_get_temp_dir().'/view_bundle_integration_'.\uniqid();
-        \mkdir($this->cacheDir, 0777, true);
+        \mkdir($this->cacheDir, 0o777, true);
         BindView::setBindUtils(null);
     }
 
@@ -62,7 +62,7 @@ final class CacheLoadingTest extends TestCase
         self::assertSame($testView::class, $metadata->className);
         self::assertCount(2, $metadata->properties);
 
-        $propNames = \array_map(fn ($p) => $p->name, $metadata->properties);
+        $propNames = \array_map(static fn ($p) => $p->name, $metadata->properties);
         self::assertContains('name', $propNames);
         self::assertContains('count', $propNames);
     }

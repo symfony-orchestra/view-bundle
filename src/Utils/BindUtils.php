@@ -121,7 +121,7 @@ class BindUtils
 
     public static function isAutoConfigurableType(\ReflectionNamedType $type): bool
     {
-        return \array_any([BindView::class, IterableView::class], fn ($class) => \is_a($type->getName(), $class, true));
+        return \array_any([BindView::class, IterableView::class], static fn ($class) => \is_a($type->getName(), $class, true));
     }
 
     private function getValue(\ReflectionProperty $targetProperty, \ReflectionProperty $sourceProperty, object $source): mixed
@@ -168,7 +168,7 @@ class BindUtils
         /** @var Type $type */
         $type = $attr->newInstance();
 
-        return new IterableView($value, fn (object|array $v) => new ($type->class)($v));
+        return new IterableView($value, static fn (object|array $v) => new ($type->class)($v));
     }
 
     /**

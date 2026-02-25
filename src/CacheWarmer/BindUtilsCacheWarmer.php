@@ -67,7 +67,7 @@ final readonly class BindUtilsCacheWarmer implements CacheWarmerInterface
         $path = $outputDir.'/'.$filename;
 
         if (!\is_dir($outputDir)) {
-            \mkdir($outputDir, 0777, true);
+            \mkdir($outputDir, 0o777, true);
         }
 
         \file_put_contents($path, $code);
@@ -95,7 +95,7 @@ final readonly class BindUtilsCacheWarmer implements CacheWarmerInterface
 
         /** @var list<class-string> $sourceClasses */
         $sourceClasses = \array_map(
-            fn (\ReflectionAttribute $attr) => $attr->newInstance()->class,
+            static fn (\ReflectionAttribute $attr) => $attr->newInstance()->class,
             $attributes
         );
 

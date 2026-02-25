@@ -49,7 +49,7 @@ final class ViewNormalizerTest extends TestCase
         $inner
             ->expects(self::exactly(2))
             ->method('normalize')
-            ->willReturnCallback(function (mixed $value, ?string $format, array $context) use ($view) {
+            ->willReturnCallback(static function (mixed $value, ?string $format, array $context) use ($view) {
                 self::assertSame('json', $format);
                 self::assertSame(['k' => 'v'], $context);
 

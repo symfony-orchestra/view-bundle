@@ -23,7 +23,7 @@ final class BindUtilsCacheWarmerTest extends TestCase
     protected function setUp(): void
     {
         $this->cacheDir = \sys_get_temp_dir().'/view_bundle_test_'.\uniqid();
-        \mkdir($this->cacheDir, 0777, true);
+        \mkdir($this->cacheDir, 0o777, true);
         BindView::setBindUtils(null);
     }
 

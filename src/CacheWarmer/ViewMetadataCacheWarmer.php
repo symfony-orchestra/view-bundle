@@ -66,7 +66,7 @@ final readonly class ViewMetadataCacheWarmer implements CacheWarmerInterface
         $path = $outputDir.'/'.$filename;
 
         if (!\is_dir($outputDir)) {
-            \mkdir($outputDir, 0777, true);
+            \mkdir($outputDir, 0o777, true);
         }
 
         \file_put_contents($path, $code);
