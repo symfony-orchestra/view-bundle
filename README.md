@@ -49,10 +49,12 @@ return [
 Define a view model that maps properties from a domain object:
 
 ```php
-use ChamberOrchestra\ViewBundle\View\BindView;
+use ChamberOrchestra\ViewBundle\Attribute\BindsFrom;
 use ChamberOrchestra\ViewBundle\Attribute\Type;
+use ChamberOrchestra\ViewBundle\View\BindView;
 use ChamberOrchestra\ViewBundle\View\IterableView;
 
+#[BindsFrom(User::class)]
 final class UserView extends BindView
 {
     public string $id;
@@ -111,7 +113,7 @@ final class GetMeAction
 
 ### Request/Response Flow
 
-1. **SetVersionSubscriber** (priority 256) — configures `BindUtils` with `kernel.share_dir`, `container.build_id`, and enables property accessor caching when `APP_DEBUG=false`
+1. **SetVersionSubscriber** (priority 256) — injects the DI-managed `BindUtils` instance into `BindView` via `BindView::setBindUtils()`
 2. Controller returns a `ViewInterface` object
 3. **ViewSubscriber** — detects `ViewInterface` results, wraps non-`ResponseViewInterface` in `DataView`, serializes to JSON via `ViewNormalizer`
 
@@ -132,7 +134,7 @@ The bundle includes a two-phase optimization strategy for production environment
 ### Phase 2: Build-Time Cache Warming
 
 - `ViewMetadataCacheWarmer` pre-computes view property metadata at build time
-- `BindUtilsCacheWarmer` pre-computes view-to-view property mappings
+- `BindUtilsCacheWarmer` pre-computes property mappings (uses `#[BindsFrom]` for targeted source classes, falls back to N² pairs)
 - Generated opcache-optimized PHP files stored in `kernel.share_dir`
 - Cache files are versioned with `container.build_id` for safe deployments
 - 60-80% reduction in reflection overhead on production requests
@@ -140,7 +142,7 @@ The bundle includes a two-phase optimization strategy for production environment
 
 ### Cache Configuration
 
-`SetVersionSubscriber` configures `BindUtils` with the share directory and build ID. When `APP_DEBUG=false`, property accessor caching is enabled with a 24-hour lifetime.
+`BindUtils` is registered as a DI service with `$buildId`, `$debug`, and `$shareDir` constructor arguments. When `APP_DEBUG=false`, property accessor caching is enabled with a 24-hour lifetime. `SetVersionSubscriber` injects the configured instance into `BindView` on each request.
 
 **Warm the cache in production:**
 
@@ -154,31 +156,20 @@ This generates build-versioned files in the shared cache directory:
 
 ## Benchmarks
 
-Benchmark scripts are included to measure serialization performance and cache impact:
+PHPBench benchmarks are included to measure serialization performance and cache impact:
 
 ```bash
-# Quick normalization timing
-php benchmark/simple-timing.php
-
-# Cache warmup impact test
-php benchmark/cache-warmup-test.php
-
-# Memory usage analysis
-php benchmark/memory-test.php
+composer bench                               # Run all benchmarks
+vendor/bin/phpbench run --report=default     # Run with default report
 ```
 
-**PHPBench integration:**
-
-```bash
-composer require --dev phpbench/phpbench
-vendor/bin/phpbench run --report=default
-```
+Benchmark classes: `BindUtilsBench`, `CacheWarmupBench`, `NormalizationBench`.
 
 ## Development
 
 ```bash
 composer install          # Install dependencies
-composer test             # Run all tests (87 tests, 326 assertions)
+composer test             # Run all tests (93 tests, 328 assertions)
 ./bin/phpunit             # Run tests directly
 ./bin/phpunit --filter X  # Run specific test class or method
 ```
