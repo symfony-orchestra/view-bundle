@@ -52,7 +52,7 @@ final class ViewSubscriberTest extends TestCase
             ->expects(self::once())
             ->method('serialize')
             ->with(
-                self::callback(fn ($value) => $value instanceof DataView && $value->data === $view),
+                self::callback(static fn ($value) => $value instanceof DataView && $value->data === $view),
                 'json',
                 ['json_encode_options' => \JSON_HEX_TAG | \JSON_HEX_APOS | \JSON_HEX_AMP | \JSON_HEX_QUOT]
             )

@@ -12,7 +12,7 @@ declare(strict_types=1);
 namespace Tests\Unit\DependencyInjection;
 
 use ChamberOrchestra\ViewBundle\DependencyInjection\ChamberOrchestraViewExtension;
-use ChamberOrchestra\ViewBundle\EventSubscriber\SetVersionSubscriber;
+use ChamberOrchestra\ViewBundle\Utils\BindUtils;
 use PHPUnit\Framework\TestCase;
 use Symfony\Component\DependencyInjection\ContainerBuilder;
 use Symfony\Component\DependencyInjection\Parameter;
@@ -25,7 +25,7 @@ final class ChamberOrchestraViewExtensionTest extends TestCase
         $extension = new ChamberOrchestraViewExtension();
         $extension->load([], $container);
 
-        $definition = $container->getDefinition(SetVersionSubscriber::class);
+        $definition = $container->getDefinition(BindUtils::class);
         $argument = $definition->getArgument('$buildId');
 
         $this->assertInstanceOf(Parameter::class, $argument);

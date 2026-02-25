@@ -32,22 +32,23 @@ The core abstraction is `ViewInterface` (marker interface). `ResponseViewInterfa
 - **View** — abstract base class implementing `ViewInterface`; convenience superclass for custom views
 - **ResponseView** — base with status code (200) and JSON headers; implements `ResponseViewInterface` and `NormalizableInterface`
 - **DataView** — wraps any `ViewInterface` or array under a `"data"` key; implements `ResponseViewInterface`
-- **BindView** — extends `stdClass`; maps matching properties from a source domain object using reflection via `BindUtils::sync()`. The `#[Type(ViewClass::class)]` attribute on `IterableView` properties specifies element view classes
+- **BindView** — extends `stdClass`; maps matching properties from a source domain object using reflection via `BindUtils::sync()`. Uses a static `setBindUtils()`/`getBindUtils()` bridge to receive the DI-managed `BindUtils` instance (falls back to `new BindUtils()` without DI). The `#[BindsFrom(EntityClass::class)]` attribute declares source classes for targeted cache warming. The `#[Type(ViewClass::class)]` attribute on `IterableView` properties specifies element view classes
 - **IterableView** — maps collections via callback or view class string
 - **KeyValueView** — produces associative array output for metadata blocks
 
 ### Request/Response Flow
 
-1. **SetVersionSubscriber** (priority 256, early) — on `RequestEvent`, configures `BindUtils` with build ID, cache lifetime, and `shareDir` for warm cache loading. Caching enabled when `APP_DEBUG=false` (24h lifetime)
+1. **SetVersionSubscriber** (priority 256, early) — on `RequestEvent`, calls `BindView::setBindUtils()` to inject the DI-managed `BindUtils` instance into the static bridge
 2. Controller returns a `ViewInterface` object
 3. **ViewSubscriber** — on `ViewEvent`, detects `ViewInterface` results, wraps non-`ResponseViewInterface` in `DataView`, serializes to JSON, and sets status/headers
 
 ### Property Binding (BindUtils)
 
-`BindUtils` is a singleton that synchronizes properties between source objects and BindView instances. It uses reflection to find intersecting properties, validates type compatibility, and handles:
+`BindUtils` is a DI service that synchronizes properties between source objects and BindView instances. Configured via constructor (`$buildId`, `$debug`, `$shareDir`) and registered in the container by `services.php`. It uses reflection to find intersecting properties, validates type compatibility, and handles:
 - Built-in types, custom objects, ViewInterface subclasses (auto-constructed), IterableView with `#[Type]` attribute
 - Skips union types and incompatible types
-- Caching enabled in production (`APP_DEBUG=false`), disabled in debug mode
+- Property accessor caching enabled when `$buildId` is non-empty; 24h lifetime in production (`$debug=false`), disabled in debug mode
+- Exposes `isReflectionTypeValidForInitialization()`, `isView()`, and `isAutoConfigurableType()` as `public static` utility methods (shared with `BindUtilsCacheWarmer`)
 
 ### Doctrine Integration
 
@@ -64,7 +65,7 @@ The core abstraction is `ViewInterface` (marker interface). `ResponseViewInterfa
 
 Two cache warmers pre-compute reflection data at deploy time, writing exported PHP files to `kernel.share_dir`:
 
-- **BindUtilsCacheWarmer** — pre-computes view-to-view property intersection mappings for `BindUtils`
+- **BindUtilsCacheWarmer** — pre-computes property intersection mappings for `BindUtils`. Uses `#[BindsFrom]` attributes on target views to limit pairs to declared source classes; falls back to N² view×view pairs when no attribute is present
 - **ViewMetadataCacheWarmer** — pre-computes serialization metadata for `ViewNormalizer`
 
 **ViewPass** (compiler pass) collects classes tagged `chamber_orchestra.view` and passes them to both cache warmers.
@@ -86,7 +87,7 @@ Two cache warmers pre-compute reflection data at deploy time, writing exported P
 - PHPUnit 13.x; tests in `tests/` autoloaded as `Tests\`
 - **Unit tests** (`tests/Unit/`) extend `TestCase`; mirror source structure
 - **Integration tests** (`tests/Integrational/`) extend `KernelTestCase`; use `Tests\Integrational\TestKernel` (minimal kernel with FrameworkBundle + ChamberOrchestraViewBundle)
-- Tests reset `BindUtils` and `ReflectionService` static state between runs
+- Tests call `BindView::setBindUtils(null)` in setUp/tearDown to reset the static bridge; `ReflectionService` uses instance storage (no static reset needed)
 - Use data providers for mapping scenarios and cache behavior
 - Write code that is easy to test.
 - Avoid hard dependencies; use dependency injection where appropriate.

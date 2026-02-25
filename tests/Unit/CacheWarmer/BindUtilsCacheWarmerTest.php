@@ -11,6 +11,7 @@ declare(strict_types=1);
 
 namespace Tests\Unit\CacheWarmer;
 
+use ChamberOrchestra\ViewBundle\Attribute\BindsFrom;
 use ChamberOrchestra\ViewBundle\CacheWarmer\BindUtilsCacheWarmer;
 use ChamberOrchestra\ViewBundle\View\BindView;
 use PHPUnit\Framework\TestCase;
@@ -22,11 +23,14 @@ final class BindUtilsCacheWarmerTest extends TestCase
     protected function setUp(): void
     {
         $this->cacheDir = \sys_get_temp_dir().'/view_bundle_test_'.\uniqid();
-        \mkdir($this->cacheDir, 0777, true);
+        \mkdir($this->cacheDir, 0o777, true);
+        BindView::setBindUtils(null);
     }
 
     protected function tearDown(): void
     {
+        BindView::setBindUtils(null);
+
         if (\is_dir($this->cacheDir)) {
             \array_map('unlink', \glob($this->cacheDir.'/*'));
             \rmdir($this->cacheDir);
@@ -136,5 +140,70 @@ final class BindUtilsCacheWarmerTest extends TestCase
                 self::assertArrayHasKey($key, $cached, "Missing mapping for $key");
             }
         }
+    }
+
+    public function testWarmUpUsesBindsFromAttributeWhenPresent(): void
+    {
+        $viewClasses = [CacheWarmerAnnotatedView::class, CacheWarmerUnannotatedView::class];
+        $warmer = new BindUtilsCacheWarmer($viewClasses, '', 'test-build');
+
+        $files = $warmer->warmUp($this->cacheDir);
+        $cached = require $files[0];
+
+        // Annotated view should only have mapping from declared source
+        $annotatedFromSource = CacheWarmerAnnotatedView::class.'@'.CacheWarmerSourceEntity::class;
+        self::assertArrayHasKey($annotatedFromSource, $cached);
+
+        // Annotated view should NOT have mapping from unannotated view (not in BindsFrom)
+        $annotatedFromUnannotated = CacheWarmerAnnotatedView::class.'@'.CacheWarmerUnannotatedView::class;
+        self::assertArrayNotHasKey($annotatedFromUnannotated, $cached);
+    }
+
+    public function testMixedAnnotatedAndUnannotatedViews(): void
+    {
+        $viewClasses = [CacheWarmerAnnotatedView::class, CacheWarmerUnannotatedView::class];
+        $warmer = new BindUtilsCacheWarmer($viewClasses, '', 'test-build');
+
+        $files = $warmer->warmUp($this->cacheDir);
+        $cached = require $files[0];
+
+        // Unannotated view should have mappings from ALL view classes (N² fallback)
+        $unannotatedFromAnnotated = CacheWarmerUnannotatedView::class.'@'.CacheWarmerAnnotatedView::class;
+        $unannotatedFromUnannotated = CacheWarmerUnannotatedView::class.'@'.CacheWarmerUnannotatedView::class;
+        self::assertArrayHasKey($unannotatedFromAnnotated, $cached);
+        self::assertArrayHasKey($unannotatedFromUnannotated, $cached);
+
+        // Annotated view should only map from its declared source
+        $annotatedFromSource = CacheWarmerAnnotatedView::class.'@'.CacheWarmerSourceEntity::class;
+        self::assertArrayHasKey($annotatedFromSource, $cached);
+
+        // Count: annotated=1 (from source entity) + unannotated=2 (from all views)
+        self::assertCount(3, $cached);
+    }
+}
+
+class CacheWarmerSourceEntity
+{
+    public string $name = '';
+}
+
+#[BindsFrom(CacheWarmerSourceEntity::class)]
+class CacheWarmerAnnotatedView extends BindView
+{
+    public string $name = '';
+
+    public function __construct(object $object)
+    {
+        parent::__construct($object);
+    }
+}
+
+class CacheWarmerUnannotatedView extends BindView
+{
+    public string $name = '';
+
+    public function __construct(object $object)
+    {
+        parent::__construct($object);
     }
 }

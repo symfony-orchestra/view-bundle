@@ -11,7 +11,9 @@ declare(strict_types=1);
 
 namespace ChamberOrchestra\ViewBundle\CacheWarmer;
 
+use ChamberOrchestra\ViewBundle\Attribute\BindsFrom;
 use ChamberOrchestra\ViewBundle\PropertyAccessor\ReflectionService;
+use ChamberOrchestra\ViewBundle\Utils\BindUtils;
 use Symfony\Component\HttpKernel\CacheWarmer\CacheWarmerInterface;
 use Symfony\Component\VarExporter\VarExporter;
 
@@ -42,7 +44,7 @@ final readonly class BindUtilsCacheWarmer implements CacheWarmerInterface
 
         // Pre-compute View-to-View property mappings
         foreach ($this->viewClasses as $targetClass) {
-            foreach ($this->viewClasses as $sourceClass) {
+            foreach ($this->getSourceClasses($targetClass) as $sourceClass) {
                 $cacheKey = $targetClass.'@'.$sourceClass;
 
                 try {
@@ -65,12 +67,39 @@ final readonly class BindUtilsCacheWarmer implements CacheWarmerInterface
         $path = $outputDir.'/'.$filename;
 
         if (!\is_dir($outputDir)) {
-            \mkdir($outputDir, 0777, true);
+            \mkdir($outputDir, 0o777, true);
         }
 
         \file_put_contents($path, $code);
 
         return [$path];
+    }
+
+    /**
+     * Returns the source classes to pair with a target class.
+     * If the target has #[BindsFrom] attributes, only declared sources are used.
+     * Otherwise, falls back to all view classes (backward-compatible N² behavior).
+     *
+     * @param class-string $targetClass
+     *
+     * @return array<class-string>
+     */
+    private function getSourceClasses(string $targetClass): array
+    {
+        $reflection = new \ReflectionClass($targetClass);
+        $attributes = $reflection->getAttributes(BindsFrom::class);
+
+        if ([] === $attributes) {
+            return $this->viewClasses;
+        }
+
+        /** @var list<class-string> $sourceClasses */
+        $sourceClasses = \array_map(
+            static fn (\ReflectionAttribute $attr) => $attr->newInstance()->class,
+            $attributes
+        );
+
+        return $sourceClasses;
     }
 
     /**
@@ -102,7 +131,7 @@ final readonly class BindUtilsCacheWarmer implements CacheWarmerInterface
                 continue;
             }
 
-            if (!$this->isReflectionTypeValidForInitialization($targetType, $sourceType)) {
+            if (!BindUtils::isReflectionTypeValidForInitialization($targetType, $sourceType)) {
                 continue;
             }
 
@@ -118,37 +147,5 @@ final readonly class BindUtilsCacheWarmer implements CacheWarmerInterface
         }
 
         return $intersection;
-    }
-
-    /**
-     * Copied from BindUtils for cache warming.
-     */
-    private function isReflectionTypeValidForInitialization(\ReflectionType $targetType, \ReflectionType $sourceType): bool
-    {
-        if (!$targetType instanceof \ReflectionNamedType) {
-            return false;
-        }
-
-        $sourceTypes = $sourceType instanceof \ReflectionUnionType ? $sourceType->getTypes() : [$sourceType];
-
-        if ($targetType->isBuiltin()) {
-            foreach ($sourceTypes as $st) {
-                if ($st instanceof \ReflectionNamedType && $st->isBuiltin()) {
-                    return true;
-                }
-            }
-
-            return false;
-        }
-
-        // For View classes, we can't check ViewInterface/BindView/IterableView here
-        // since we're in cache warming context, so allow all non-builtin matches
-        foreach ($sourceTypes as $st) {
-            if ($st instanceof \ReflectionNamedType && \is_a($targetType->getName(), $st->getName(), true)) {
-                return true;
-            }
-        }
-
-        return false;
     }
 }

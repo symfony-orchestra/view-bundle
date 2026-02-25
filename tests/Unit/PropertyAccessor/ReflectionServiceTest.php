@@ -16,11 +16,6 @@ use PHPUnit\Framework\TestCase;
 
 final class ReflectionServiceTest extends TestCase
 {
-    protected function setUp(): void
-    {
-        $this->resetCache();
-    }
-
     public function testItCachesAndMergesParentProperties(): void
     {
         $service = new ReflectionService();
@@ -66,12 +61,6 @@ final class ReflectionServiceTest extends TestCase
 
         $this->assertArrayHasKey('childProp', $properties);
         $this->assertArrayHasKey('parentProp', $properties);
-    }
-
-    private function resetCache(): void
-    {
-        $ref = new \ReflectionProperty(ReflectionService::class, 'storage');
-        $ref->setValue(null, []);
     }
 }
 

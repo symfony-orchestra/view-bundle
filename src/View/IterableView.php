@@ -42,7 +42,7 @@ class IterableView extends View implements NormalizableInterface
      */
     protected static function map(array|object $value): ViewInterface
     {
-        $valueType = \is_object($value) ? \get_class($value) : \gettype($value);
+        $valueType = \is_object($value) ? $value::class : \gettype($value);
         throw new \RuntimeException(\sprintf('%s should be defined or mapping closure should be passed for value of type %s', __METHOD__, $valueType));
     }
 

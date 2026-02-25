@@ -12,6 +12,7 @@ declare(strict_types=1);
 use ChamberOrchestra\ViewBundle\CacheWarmer\BindUtilsCacheWarmer;
 use ChamberOrchestra\ViewBundle\CacheWarmer\ViewMetadataCacheWarmer;
 use ChamberOrchestra\ViewBundle\Serializer\Normalizer\ViewNormalizer;
+use ChamberOrchestra\ViewBundle\Utils\BindUtils;
 use Symfony\Component\DependencyInjection\Loader\Configurator\ContainerConfigurator;
 use Symfony\Component\Serializer\Normalizer\CustomNormalizer;
 
@@ -25,6 +26,12 @@ return static function (ContainerConfigurator $container): void {
 
     $services->set(CustomNormalizer::class);
     $services->set(ViewNormalizer::class);
+
+    // Register BindUtils as a DI service
+    // Note: $buildId is set in ChamberOrchestraViewExtension (container.build_id is unavailable at load time)
+    $services->set(BindUtils::class)
+        ->arg('$debug', '%env(bool:APP_DEBUG)%')
+        ->arg('$shareDir', '%kernel.share_dir%');
 
     // Configure cache warmers (ViewPass will inject View class names)
     // Note: $buildId is set in ChamberOrchestraViewExtension (container.build_id is unavailable at load time)

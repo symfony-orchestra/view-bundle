@@ -15,8 +15,20 @@ use ChamberOrchestra\ViewBundle\Utils\BindUtils;
 
 abstract class BindView extends \stdClass implements ViewInterface
 {
+    private static ?BindUtils $bindUtils = null;
+
+    public static function setBindUtils(?BindUtils $bindUtils): void
+    {
+        self::$bindUtils = $bindUtils;
+    }
+
     public function __construct(object $object)
     {
-        BindUtils::instance()->sync($this, $object);
+        self::getBindUtils()->sync($this, $object);
+    }
+
+    private static function getBindUtils(): BindUtils
+    {
+        return self::$bindUtils ??= new BindUtils();
     }
 }

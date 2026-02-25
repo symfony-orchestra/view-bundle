@@ -134,6 +134,6 @@ readonly class ReflectionPropertyAccessor implements PropertyAccessorInterface
             '/^Can\'t get a way to read the property "'.$propertyPath.'" in class '.\preg_quote($objectType, '/').'$/',
         ];
 
-        return \array_any($interceptablePatterns, fn (string $pattern): bool => (bool) \preg_match($pattern, $e->getMessage()));
+        return \array_any($interceptablePatterns, static fn (string $pattern): bool => (bool) \preg_match($pattern, $e->getMessage()));
     }
 }
