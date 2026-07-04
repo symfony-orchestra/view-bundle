@@ -2,9 +2,10 @@ name: PHP Composer
 
 on:
   push:
-    branches: [ "master" ]
+    branches:
+      - master
+      - "[0-9]+.[0-9]+"
   pull_request:
-    branches: [ "master" ]
 
 permissions:
   contents: read
