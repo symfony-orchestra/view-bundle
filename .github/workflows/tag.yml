@@ -20,20 +20,26 @@ jobs:
           fetch-depth: 0
           fetch-tags: true
 
-      - name: Get latest tag and compute next patch version
+      - name: Compute next patch version for the PR's release line
         id: version
+        env:
+          HEAD_REF: ${{ github.event.pull_request.head.ref }}
         run: |
-          latest=$(git tag --sort=-v:refname | grep -E '^v[0-9]+\.[0-9]+\.[0-9]+$' | head -1)
-          if [ -z "$latest" ]; then
-            echo "next=v0.0.1" >> "$GITHUB_OUTPUT"
-          else
-            major=$(echo "$latest" | cut -d. -f1)
-            minor=$(echo "$latest" | cut -d. -f2)
-            patch=$(echo "$latest" | cut -d. -f3)
-            next_patch=$((patch + 1))
-            echo "next=${major}.${minor}.${next_patch}" >> "$GITHUB_OUTPUT"
+          if [[ ! "$HEAD_REF" =~ ^([0-9]+)\.([0-9]+)$ ]]; then
+            echo "PR head ref '$HEAD_REF' is not a release branch (expected '<major>.<minor>'); refusing to tag." >&2
+            exit 1
           fi
-          echo "Latest tag: ${latest:-none}, next: $(cat "$GITHUB_OUTPUT" | grep next | cut -d= -f2)"
+          major="${BASH_REMATCH[1]}"
+          minor="${BASH_REMATCH[2]}"
+          latest=$(git tag --sort=-v:refname | grep -E "^v${major}\.${minor}\.[0-9]+$" | head -1)
+          if [ -z "$latest" ]; then
+            next="v${major}.${minor}.1"
+          else
+            patch=$(echo "$latest" | cut -d. -f3)
+            next="v${major}.${minor}.$((patch + 1))"
+          fi
+          echo "next=$next" >> "$GITHUB_OUTPUT"
+          echo "Release line: ${major}.${minor}, latest tag: ${latest:-none}, next: $next"
 
       - name: Create and push tag
         run: |
