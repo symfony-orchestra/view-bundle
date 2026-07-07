@@ -44,7 +44,8 @@
     "symfony/test-pack": "^1.2",
     "phpstan/phpstan": "^2.1",
     "friendsofphp/php-cs-fixer": "^3.94",
-    "phpbench/phpbench": "^1.4"
+    "phpbench/phpbench": "^1.4",
+    "symfony/security-core": "^8.1"
   },
   "autoload": {
     "psr-4": {
@@ -55,6 +56,9 @@
     "psr-4": {
       "Tests\\": "tests/"
     }
+  },
+  "suggest": {
+    "symfony/security-core": "Required for user-scoped response caching (SecurityAwareTrait, PrivateCachedView)"
   },
   "minimum-stability": "stable",
   "conflict": {

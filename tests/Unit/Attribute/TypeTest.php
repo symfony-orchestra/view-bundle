@@ -12,6 +12,7 @@ declare(strict_types=1);
 namespace Tests\Unit\Attribute;
 
 use ChamberOrchestra\ViewBundle\Attribute\Type;
+use ChamberOrchestra\ViewBundle\View\SourceCacheSignatureInterface;
 use ChamberOrchestra\ViewBundle\View\ViewInterface;
 use PHPUnit\Framework\TestCase;
 
@@ -50,6 +51,27 @@ final class TypeTest extends TestCase
         $this->expectExceptionMessage('must implement ViewInterface');
         new Type(\stdClass::class);
     }
+
+    public function testCachedDefaultsToFalse(): void
+    {
+        $type = new Type(DummyImageView::class);
+
+        $this->assertFalse($type->cached);
+    }
+
+    public function testCachedRequiresSourceCacheSignature(): void
+    {
+        $this->expectException(\InvalidArgumentException::class);
+        $this->expectExceptionMessage('must implement SourceCacheSignatureInterface');
+        new Type(DummyImageView::class, cached: true);
+    }
+
+    public function testCachedAcceptsSourceSignedView(): void
+    {
+        $type = new Type(DummySignedImageView::class, cached: true);
+
+        $this->assertTrue($type->cached);
+    }
 }
 
 final class DummyView
@@ -60,4 +82,12 @@ final class DummyView
 
 final class DummyImageView implements ViewInterface
 {
+}
+
+final class DummySignedImageView implements SourceCacheSignatureInterface
+{
+    public static function createCacheSignature(object $source): string
+    {
+        return 'dummy';
+    }
 }

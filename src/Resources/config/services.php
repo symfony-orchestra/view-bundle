@@ -9,6 +9,7 @@ declare(strict_types=1);
  * file that was distributed with this source code.
  */
 
+use ChamberOrchestra\ViewBundle\Cache\ViewResponseCache;
 use ChamberOrchestra\ViewBundle\CacheWarmer\BindUtilsCacheWarmer;
 use ChamberOrchestra\ViewBundle\CacheWarmer\ViewMetadataCacheWarmer;
 use ChamberOrchestra\ViewBundle\Serializer\Normalizer\ViewNormalizer;
@@ -26,6 +27,11 @@ return static function (ContainerConfigurator $container): void {
 
     $services->set(CustomNormalizer::class);
     $services->set(ViewNormalizer::class);
+
+    // JSON payload cache for CachedView and CacheableViewInterface results.
+    // Pool and TTL arguments are set by ChamberOrchestraViewExtension from the response_cache config
+    $services->set(ViewResponseCache::class)
+        ->autowire(false);
 
     // Register BindUtils as a DI service
     // Note: $buildId is set in ChamberOrchestraViewExtension (container.build_id is unavailable at load time)
@@ -48,11 +54,14 @@ return static function (ContainerConfigurator $container): void {
         ->load('ChamberOrchestra\\ViewBundle\\', '../../*')
         ->exclude([
             '../../Attribute',
+            '../../Cache',
             '../../CacheWarmer',
+            '../../Localisation',
             '../../DependencyInjection',
             '../../Exception',
             '../../PropertyAccessor',
             '../../Resources',
+            '../../Security',
             '../../Serializer/Metadata/ViewClassMetadata.php',
             '../../Serializer/Metadata/ViewPropertyMetadata.php',
             '../../Utils',

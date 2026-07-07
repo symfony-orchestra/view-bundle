@@ -51,7 +51,9 @@ readonly class ReflectionPropertyAccessor implements PropertyAccessorInterface
 
         try {
             return $this->decorated->getValue($objectOrArray, $propertyPath);
-        } catch (\Exception $e) {
+        } catch (\Throwable $e) {
+            // PHP throws a raw \Error (not an Exception) when reading an inaccessible property directly
+
             if (!$this->isIntercepted($e, $objectOrArray, $propertyPath)) {
                 throw $e;
             }

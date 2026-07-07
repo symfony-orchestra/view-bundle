@@ -35,20 +35,35 @@ The core abstraction is `ViewInterface` (marker interface). `ResponseViewInterfa
 - **BindView** — extends `stdClass`; maps matching properties from a source domain object using reflection via `BindUtils::sync()`. Uses a static `setBindUtils()`/`getBindUtils()` bridge to receive the DI-managed `BindUtils` instance (falls back to `new BindUtils()` without DI). The `#[BindsFrom(EntityClass::class)]` attribute declares source classes for targeted cache warming. The `#[Type(ViewClass::class)]` attribute on `IterableView` properties specifies element view classes
 - **IterableView** — maps collections via callback or view class string
 - **KeyValueView** — produces associative array output for metadata blocks
+- **SourceCacheSignatureInterface** — extends `ViewInterface`; declares `static createCacheSignature(object $source): string` so signatures are computable from the source without constructing the view. Required by `CachedView`, `CachedBindView` and `#[Type(..., cached: true)]`
+- **CachedViewInterface** — extends `CacheableViewInterface` with `getTtl()` and `createView()`; the contract `ViewNormalizer` resolves through the per-signature normalized-payload cache. Implemented by `CachedView` and `PrivateCachedView`
+- **CachedView** — final descriptor pairing a source object with the view class rendering it (`new CachedView($user, UserView::class, ?factory, ?ttl)`); default factory is `new $viewClass($source)`. Carries NO status/headers (always the standard `DataView` envelope, use `ResponseView` for custom responses)
+- **PrivateCachedView** — private-payload `CachedView` (composition over an inner `CachedView`): the current user's identifier and the request locale — resolved via `SecurityBridge`/`LocalisationBridge`, never passed in — are appended to the signature (`...@user:<identifier|anonymous>@locale:<locale|default>`), isolating cache entries per user × locale. For custom scoping, views use the aware-traits inside their own `createCacheSignature()` with a plain `CachedView`
+- **SecurityAwareTrait** — gives views static access to the current user (`self::getUser()` / `self::getUserIdentifier()`), usable in constructors for personalised fields and in `createCacheSignature()`. Delegates to `SecurityBridge` (`src/Security/`), a static holder filled per request by `SetSecuritySubscriber` — same pattern as `BindView::setBindUtils()`. Trait statics are per-using-class in PHP, hence the single shared holder. symfony/security-core is a soft dependency (dev-only + composer suggest); without it everything resolves to the anonymous user. Worker-mode safe (FrankenPHP/RoadRunner/Swoole): the bridge stores the token storage SERVICE (reset between requests by the framework's services resetter), never a resolved user — do not change it to cache the user object statically
+- **LocalisationAwareTrait / LocalisationBridge / SetLocalisationSubscriber** — the identical bridge pattern for the request locale: the bridge (`src/Localisation/`) holds the framework `RequestStack` service and resolves `getLocale()` from the current request at call time. No extra dependencies (http-foundation is already required). Same worker-mode rule: store the stack service, never a resolved locale
+- **CacheableViewInterface** — extends `ViewInterface`; views implementing `getCacheSignature()` get their serialized JSON cached automatically by `ViewSubscriber` (the view is still constructed; only normalization + encoding are skipped). `CachedView` implements it
+- **AutoCacheSignatureTrait** — provides `getCacheSignature()` as a hash of class name + `get_object_vars()`, for views without an entity marker to derive a signature from. Values must be deterministic; works with anonymous classes (hashes values, not the object)
+- **CachedBindView** — abstract `BindView` + `CacheableViewInterface` + `SourceCacheSignatureInterface` with deferred binding: the constructor only stores the source (does NOT call `parent::__construct()`); `ViewNormalizer` calls `bind()` right before reading properties, so a cache hit skips binding entirely. Subclasses implement the static `createCacheSignature()`; the instance `getCacheSignature()` delegates to it. `BindView::getBindUtils()` is `protected static` to support this
+- The `#[Type(ViewClass::class, cached: true)]` attribute variant makes `BindUtils` map each collection element to a `CachedView` descriptor, enabling per-item normalized-payload caching inside `IterableView` properties
 
 ### Request/Response Flow
 
-1. **SetVersionSubscriber** (priority 256, early) — on `RequestEvent`, calls `BindView::setBindUtils()` to inject the DI-managed `BindUtils` instance into the static bridge
+1. **SetVersionSubscriber** (priority 256, early) — on `RequestEvent`, calls `BindView::setBindUtils()` to inject the DI-managed `BindUtils` instance into the static bridge. **SetSecuritySubscriber** and **SetLocalisationSubscriber** (same priority) do the same for the security token storage (`SecurityBridge::setTokenStorage()`, optional — null without symfony/security) and the request stack (`LocalisationBridge::setRequestStack()`)
 2. Controller returns a `ViewInterface` object
-3. **ViewSubscriber** — on `ViewEvent`, detects `ViewInterface` results, wraps non-`ResponseViewInterface` in `DataView`, serializes to JSON, and sets status/headers
+3. **ViewSubscriber** — on `ViewEvent`, detects `ViewInterface` results, wraps non-`ResponseViewInterface` in `DataView`, serializes to JSON, and sets status/headers. `CachedView` results are resolved through `ViewResponseCache` (PSR-6, `cache.app` by default) before any view building or serialization happens
 
 ### Property Binding (BindUtils)
 
 `BindUtils` is a DI service that synchronizes properties between source objects and BindView instances. Configured via constructor (`$buildId`, `$debug`, `$shareDir`) and registered in the container by `services.php`. It uses reflection to find intersecting properties, validates type compatibility, and handles:
 - Built-in types, custom objects, ViewInterface subclasses (auto-constructed), IterableView with `#[Type]` attribute
 - Skips union types and incompatible types
+- The per-property hot path uses the cached `ReflectionProperty` objects directly: public getters (`get`/`is`/`has` prefixes, resolved once per class into `$getterCache`) take priority, then direct reflection reads/writes. Doctrine proxies are initialized once per `sync()`. The Symfony PropertyAccessor is only a fallback for non-public target properties (setter support)
 - Property accessor caching enabled when `$buildId` is non-empty; 24h lifetime in production (`$debug=false`), disabled in debug mode
 - Exposes `isReflectionTypeValidForInitialization()`, `isView()`, and `isAutoConfigurableType()` as `public static` utility methods (shared with `BindUtilsCacheWarmer`)
+
+### Response-Level JSON Caching
+
+`ViewResponseCache` (`src/Cache/`) stores two kinds of payloads keyed by hashed view signatures in a PSR-6 pool: whole-response JSON strings (`get()`, used by `ViewSubscriber`) and per-item normalized data (`getNormalized()`, used by `ViewNormalizer` for `CachedView` descriptors) under separate key namespaces. Configured via the `response_cache` bundle config (`Configuration` + `ChamberOrchestraViewExtension`): `enabled` (default true, master switch), `pool` (default `cache.app`, wired with `NULL_ON_INVALID_REFERENCE`), `default_ttl` (default `ViewResponseCache::DEFAULT_TTL_SECONDS` = 86400, one day; must be a positive integer — null/non-expiring entries are not allowed; `CachedView` descriptors may override per instance). Every stored entry gets `expiresAfter()`. When disabled or without a pool it is a transparent pass-through. Signatures are derived from the source entity/model (e.g. id + updated-at timestamp) so a state change produces a new signature.
 
 ### Doctrine Integration
 
@@ -56,7 +71,7 @@ The core abstraction is `ViewInterface` (marker interface). `ResponseViewInterfa
 
 ### Serializer & Metadata
 
-`ViewNormalizer` handles `ViewInterface` instances, strips null values from output, and delegates nested normalization. It uses `ViewMetadataFactory` to introspect view classes.
+`ViewNormalizer` handles `ViewInterface` instances, strips null values from output, and delegates nested normalization. It uses `ViewMetadataFactory` to introspect view classes. It resolves `CachedView` descriptors through `ViewResponseCache::getNormalized()` (building the view only on a miss) and triggers the deferred binding of `CachedBindView` instances before reading their properties.
 
 - **ViewMetadataFactory** — builds `ViewClassMetadata` for view classes; supports warm cache loading from pre-exported PHP files
 - **ViewClassMetadata** / **ViewPropertyMetadata** — value objects describing view class structure (property names, nullability, default values)
@@ -87,7 +102,7 @@ Two cache warmers pre-compute reflection data at deploy time, writing exported P
 - PHPUnit 13.x; tests in `tests/` autoloaded as `Tests\`
 - **Unit tests** (`tests/Unit/`) extend `TestCase`; mirror source structure
 - **Integration tests** (`tests/Integrational/`) extend `KernelTestCase`; use `Tests\Integrational\TestKernel` (minimal kernel with FrameworkBundle + ChamberOrchestraViewBundle)
-- Tests call `BindView::setBindUtils(null)` in setUp/tearDown to reset the static bridge; `ReflectionService` uses instance storage (no static reset needed)
+- Tests call `BindView::setBindUtils(null)`, `SecurityBridge::setTokenStorage(null)` and `LocalisationBridge::setRequestStack(null)` in setUp/tearDown to reset the static bridges; `ReflectionService` uses instance storage (no static reset needed)
 - Use data providers for mapping scenarios and cache behavior
 - Write code that is easy to test.
 - Avoid hard dependencies; use dependency injection where appropriate.

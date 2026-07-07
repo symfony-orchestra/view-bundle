@@ -11,20 +11,38 @@ declare(strict_types=1);
 
 namespace ChamberOrchestra\ViewBundle\DependencyInjection;
 
+use ChamberOrchestra\ViewBundle\Cache\ViewResponseCache;
 use ChamberOrchestra\ViewBundle\Serializer\Metadata\ViewMetadataFactory;
 use ChamberOrchestra\ViewBundle\Utils\BindUtils;
 use Symfony\Component\Config\FileLocator;
 use Symfony\Component\DependencyInjection\ContainerBuilder;
+use Symfony\Component\DependencyInjection\ContainerInterface;
 use Symfony\Component\DependencyInjection\Extension\Extension;
 use Symfony\Component\DependencyInjection\Loader\PhpFileLoader;
 use Symfony\Component\DependencyInjection\Parameter;
+use Symfony\Component\DependencyInjection\Reference;
 
 class ChamberOrchestraViewExtension extends Extension
 {
     public function load(array $configs, ContainerBuilder $container): void
     {
+        /** @var array{response_cache: array{enabled: bool, pool: string, default_ttl: int}} $config */
+        $config = $this->processConfiguration(new Configuration(), $configs);
+
         new PhpFileLoader($container, new FileLocator(__DIR__.'/../Resources/config'))->load('services.php');
         $this->registerViewCache($container);
+        $this->configureResponseCache($container, $config['response_cache']);
+    }
+
+    /**
+     * @param array{enabled: bool, pool: string, default_ttl: int} $config
+     */
+    private function configureResponseCache(ContainerBuilder $container, array $config): void
+    {
+        $definition = $container->getDefinition(ViewResponseCache::class);
+
+        $definition->setArgument('$pool', $config['enabled'] ? new Reference($config['pool'], ContainerInterface::NULL_ON_INVALID_REFERENCE) : null);
+        $definition->setArgument('$defaultTtl', $config['default_ttl']);
     }
 
     private function registerViewCache(ContainerBuilder $container): void

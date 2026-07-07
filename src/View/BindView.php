@@ -27,7 +27,7 @@ abstract class BindView extends \stdClass implements ViewInterface
         self::getBindUtils()->sync($this, $object);
     }
 
-    private static function getBindUtils(): BindUtils
+    protected static function getBindUtils(): BindUtils
     {
         return self::$bindUtils ??= new BindUtils();
     }
