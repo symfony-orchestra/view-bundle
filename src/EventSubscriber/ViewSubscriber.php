@@ -11,6 +11,9 @@ declare(strict_types=1);
 
 namespace ChamberOrchestra\ViewBundle\EventSubscriber;
 
+use ChamberOrchestra\ViewBundle\Cache\ViewResponseCache;
+use ChamberOrchestra\ViewBundle\View\CacheableViewInterface;
+use ChamberOrchestra\ViewBundle\View\CachedViewInterface;
 use ChamberOrchestra\ViewBundle\View\DataView;
 use ChamberOrchestra\ViewBundle\View\ResponseViewInterface;
 use ChamberOrchestra\ViewBundle\View\ViewInterface;
@@ -24,25 +27,47 @@ readonly class ViewSubscriber
 {
     private const SERIALIZATION_FORMAT = 'json';
 
+    private ViewResponseCache $viewResponseCache;
+
     public function __construct(
         private SerializerInterface $serializer,
+        ?ViewResponseCache $viewResponseCache = null,
     ) {
+        $this->viewResponseCache = $viewResponseCache ?? new ViewResponseCache();
     }
 
     public function __invoke(ViewEvent $event): void
     {
-        if (!($view = $event->getControllerResult()) instanceof ViewInterface) {
+        $result = $event->getControllerResult();
+
+        if (!$result instanceof ViewInterface) {
             return;
         }
 
-        $view = $view instanceof ResponseViewInterface ? $view : new DataView($view);
+        $view = $this->wrap($result);
 
-        $json = $this->serializer->serialize(
+        $json = $result instanceof CacheableViewInterface
+            ? $this->viewResponseCache->get(
+                $result->getCacheSignature(),
+                $result instanceof CachedViewInterface ? $result->getTtl() : null,
+                fn (): string => $this->serialize($view),
+            )
+            : $this->serialize($view);
+
+        $event->setResponse(new JsonResponse($json, $view->getStatus(), $view->getHeaders(), true));
+    }
+
+    private function wrap(ViewInterface $view): ViewInterface&ResponseViewInterface
+    {
+        return $view instanceof ResponseViewInterface ? $view : new DataView($view);
+    }
+
+    private function serialize(ViewInterface $view): string
+    {
+        return $this->serializer->serialize(
             $view,
             self::SERIALIZATION_FORMAT,
             ['json_encode_options' => JsonResponse::DEFAULT_ENCODING_OPTIONS]
         );
-
-        $event->setResponse(new JsonResponse($json, $view->getStatus(), $view->getHeaders(), true));
     }
 }

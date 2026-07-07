@@ -15,9 +15,13 @@ use ChamberOrchestra\ViewBundle\Attribute\Type;
 use ChamberOrchestra\ViewBundle\PropertyAccessor\ReflectionPropertyAccessor;
 use ChamberOrchestra\ViewBundle\PropertyAccessor\ReflectionService;
 use ChamberOrchestra\ViewBundle\View\BindView;
+use ChamberOrchestra\ViewBundle\View\CachedView;
 use ChamberOrchestra\ViewBundle\View\IterableView;
+use ChamberOrchestra\ViewBundle\View\SourceCacheSignatureInterface;
 use ChamberOrchestra\ViewBundle\View\ViewInterface;
 use Doctrine\Common\Util\ClassUtils;
+use Doctrine\Persistence\Proxy;
+use Symfony\Component\PropertyAccess\Exception\UninitializedPropertyException;
 use Symfony\Component\PropertyAccess\PropertyAccessor;
 use Symfony\Component\PropertyInfo\Extractor\ReflectionExtractor;
 
@@ -36,6 +40,9 @@ class BindUtils
 
     /** @var array<string, array<string, array{0: array{class: class-string, name: string}, 1: array{class: class-string, name: string}}>>|null */
     private ?array $warmedCache = null;
+
+    /** @var array<string, string> Getter method name per "Class::property"; empty string means direct property access */
+    private array $getterCache = [];
     private ReflectionService $reflectionService;
     private ?ReflectionPropertyAccessor $accessor = null;
 
@@ -64,19 +71,21 @@ class BindUtils
      */
     public function sync(object $target, object $source): void
     {
+        // Initialize Doctrine proxies once per sync instead of on every property access
+        if ($source instanceof Proxy && !$source->__isInitialized()) {
+            $source->__load();
+        }
+
         foreach ($this->getIntersectedProperties($target, $source) as [$targetProperty, $sourceProperty]) {
             /** @var \ReflectionProperty $targetProperty */
-            /** @var \ReflectionProperty $sourceProperty */
-            $propertyName = $targetProperty->getName();
+            /* @var \ReflectionProperty $sourceProperty */
 
             // Skip properties that already have non-null values
-            if ($this->getAccessor()->isStrictlyReadable($target, $propertyName)) {
-                if (null !== $this->getAccessor()->getValue($target, $propertyName)) {
-                    continue;
-                }
+            if ($this->hasNonNullValue($target, $targetProperty)) {
+                continue;
             }
 
-            $this->getAccessor()->setValue($target, $propertyName, $this->getValue($targetProperty, $sourceProperty, $source));
+            $this->writeTargetValue($target, $targetProperty, $this->getValue($targetProperty, $sourceProperty, $source));
         }
     }
 
@@ -126,7 +135,7 @@ class BindUtils
 
     private function getValue(\ReflectionProperty $targetProperty, \ReflectionProperty $sourceProperty, object $source): mixed
     {
-        if (null === $value = $this->getAccessor()->getValue($source, $sourceProperty->getName())) {
+        if (null === $value = $this->readSourceValue($source, $sourceProperty)) {
             return null;
         }
 
@@ -145,6 +154,88 @@ class BindUtils
         }
 
         return $value;
+    }
+
+    /**
+     * Whether the property already holds a non-null, publicly readable value.
+     *
+     * Getters take priority over direct property access, mirroring PropertyAccessor semantics.
+     */
+    private function hasNonNullValue(object $target, \ReflectionProperty $property): bool
+    {
+        $getter = $this->resolveGetter($target::class, $property->getName());
+
+        if ('' !== $getter) {
+            return null !== $target->{$getter}();
+        }
+
+        if ($property->isPublic()) {
+            return $property->isInitialized($target) && null !== $property->getValue($target);
+        }
+
+        return false;
+    }
+
+    private function writeTargetValue(object $target, \ReflectionProperty $property, mixed $value): void
+    {
+        if ($property->isPublic()) {
+            $property->setValue($target, $value);
+
+            return;
+        }
+
+        // Non-public target properties go through the accessor for setter support and proper failures
+        $this->getAccessor()->setValue($target, $property->getName(), $value);
+    }
+
+    private function readSourceValue(object $source, \ReflectionProperty $property): mixed
+    {
+        $getter = $this->resolveGetter($source::class, $property->getName());
+
+        if ('' !== $getter) {
+            return $source->{$getter}();
+        }
+
+        if (!$property->isInitialized($source)) {
+            throw new UninitializedPropertyException(\sprintf('The property "%s::$%s" is not initialized.', $property->getDeclaringClass()->getName(), $property->getName()));
+        }
+
+        return $property->getValue($source);
+    }
+
+    /**
+     * Resolve a public getter ("get"/"is"/"has" prefix) for the property, cached per class.
+     *
+     * @param class-string $className
+     *
+     * @return string The getter method name, or an empty string when the property must be read directly
+     */
+    private function resolveGetter(string $className, string $propertyName): string
+    {
+        $cacheKey = $className.'::'.$propertyName;
+
+        if (isset($this->getterCache[$cacheKey])) {
+            return $this->getterCache[$cacheKey];
+        }
+
+        $reflection = new \ReflectionClass($className);
+        $suffix = \ucfirst($propertyName);
+
+        foreach (['get', 'is', 'has'] as $prefix) {
+            $method = $prefix.$suffix;
+
+            if (!$reflection->hasMethod($method)) {
+                continue;
+            }
+
+            $reflectionMethod = $reflection->getMethod($method);
+
+            if ($reflectionMethod->isPublic() && !$reflectionMethod->isStatic() && 0 === $reflectionMethod->getNumberOfRequiredParameters()) {
+                return $this->getterCache[$cacheKey] = $method;
+            }
+        }
+
+        return $this->getterCache[$cacheKey] = '';
     }
 
     private function isTypedIterableView(\ReflectionProperty $property): bool
@@ -167,6 +258,15 @@ class BindUtils
         $attr = \current($property->getAttributes(Type::class));
         /** @var Type $type */
         $type = $attr->newInstance();
+
+        if ($type->cached) {
+            /** @var class-string<SourceCacheSignatureInterface> $viewClass */
+            $viewClass = $type->class;
+
+            // Each element becomes a cheap CachedView descriptor: the element view is only
+            // built and normalized when its per-item cache entry misses
+            return new IterableView($value, static fn (object $v) => new CachedView($v, $viewClass));
+        }
 
         return new IterableView($value, static fn (object|array $v) => new ($type->class)($v));
     }
