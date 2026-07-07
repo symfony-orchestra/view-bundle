@@ -128,6 +128,45 @@ final class BindUtilsTest extends TestCase
         self::assertNull($target->union);
     }
 
+    public function testSyncReadsPrivateSourcePropertiesThroughGetters(): void
+    {
+        $bindUtils = new BindUtils();
+
+        $source = new class {
+            private string $name = 'stored';
+
+            public function getName(): string
+            {
+                return $this->name.'-via-getter';
+            }
+        };
+
+        $target = new class {
+            public ?string $name = null;
+        };
+
+        $bindUtils->sync($target, $source);
+
+        self::assertSame('stored-via-getter', $target->name, 'Getters must take priority over direct property access');
+    }
+
+    public function testSyncReadsPrivateSourcePropertiesWithoutGetters(): void
+    {
+        $bindUtils = new BindUtils();
+
+        $source = new class {
+            private string $name = 'private-value'; // @phpstan-ignore property.unused
+        };
+
+        $target = new class {
+            public ?string $name = null;
+        };
+
+        $bindUtils->sync($target, $source);
+
+        self::assertSame('private-value', $target->name);
+    }
+
     public function testSyncAllowsAutoConfigurableTargetTypes(): void
     {
         $bindUtils = new BindUtils();

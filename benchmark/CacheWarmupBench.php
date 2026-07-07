@@ -82,13 +82,4 @@ class CacheWarmupBench
         $factory = new ViewMetadataFactory();
         $factory->getMetadata($this->simpleViewClass);
     }
-
-    #[Bench\Revs(1000)]
-    #[Bench\Iterations(5)]
-    #[Bench\Warmup(5)]
-    #[Bench\Groups(['bind'])]
-    public function benchBindViewConstruction(): void
-    {
-        new ($this->bindViewClass)($this->bindSource);
-    }
 }
