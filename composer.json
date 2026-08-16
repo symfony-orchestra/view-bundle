@@ -40,11 +40,11 @@
     "symfony/runtime": "^8.1"
   },
   "require-dev": {
-    "phpunit/phpunit": "^13.0",
+    "phpunit/phpunit": "^13.3",
     "symfony/test-pack": "^1.2",
-    "phpstan/phpstan": "^2.1",
-    "friendsofphp/php-cs-fixer": "^3.94",
-    "phpbench/phpbench": "^1.4",
+    "phpstan/phpstan": "^2.2",
+    "friendsofphp/php-cs-fixer": "^3.95",
+    "phpbench/phpbench": "^1.7",
     "symfony/security-core": "^8.1"
   },
   "autoload": {
